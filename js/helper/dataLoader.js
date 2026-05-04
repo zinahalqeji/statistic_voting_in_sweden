@@ -12,7 +12,7 @@ dbQuery.use('undersokning_2022');
 export let undersokning2022 = await dbQuery('SELECT * FROM roster_2022');
 
 dbQuery.use('valresultat');
-export let electionResults = await dbQuery('SELECT * FROM rostning');
+export let rostningInfo = await dbQuery('SELECT * FROM rostning');
 
 // MYSQL
 dbQuery.use('geo-mysql');

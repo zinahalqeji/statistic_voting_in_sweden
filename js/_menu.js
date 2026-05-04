@@ -3,39 +3,39 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
   { name: 'Introduktion', script: 'intro.js' },
 
   { name: 'Valöversikt', sub: [
-      { name: 'Valresultat 2018 vs 2022', script: 'overview-elections.js' },
-      { name: 'Jämförelse mellan partier', script: 'party-comparison.js' },
-      { name: 'Största förändringar', script: 'party-change.js' }
+      { name: 'Valresultat 2018 vs 2022', script: 'valoversikt/overview-elections.js' },
+      { name: 'Jämförelse mellan partier', script: 'valoversikt/party-comparison.js' },
+      { name: 'Största förändringar', script: 'valoversikt/party-change.js' }
   ]},
 
   { name: 'Ekonomiska faktorer', sub: [
-      { name: 'Inkomst (översikt)', script: 'income.js' },
-      { name: 'Inkomst vs röstning', script: 'income-voting.js' },
-      { name: 'Hög vs låg inkomst', script: 'income-groups.js' },
-      { name: 'Arbetslöshet', script: 'arbetslos.js' },
-      { name: 'Arbetslöshet vs Val', script: 'unemployment-voting.js' } 
+      { name: 'Inkomst (översikt)', script: 'ekonomiska/income.js' },
+      { name: 'Inkomst vs röstning', script: 'ekonomiska/income-voting.js' },
+      { name: 'Hög vs låg inkomst', script: 'ekonomiska/income-groups.js' },
+      { name: 'Arbetslöshet', script: 'ekonomiska/arbetslos.js' },
+      { name: 'Arbetslöshet vs Val', script: 'ekonomiska/unemployment-voting.js' } 
   ]},
 
   { name: 'Demografi', sub: [
-      { name: 'Ålder (översikt)', script: 'ages.js' },
-      { name: 'Ålder vs röstning', script: 'age-voting.js' },
-      { name: 'Unga vs äldre områden', script: 'age-groups.js' },
-      { name: 'Utbildning', script: 'academics.js' }
+      { name: 'Ålder (översikt)', script: 'demografi/ages.js' },
+      { name: 'Ålder vs röstning', script: 'demografi/age-voting.js' },
+      { name: 'Unga vs äldre områden', script: 'demografi/age-groups.js' },
+      { name: 'Utbildning', script: 'demografi/academics.js' }
   ]},
 
  { name: 'Geografisk plats', sub: [
-     { name: 'Regioner (Norr/Söder)', script: 'regions.js' },
-     { name: 'Stad vs Landsbygd', script: 'urban-rural.js' },
-     { name: 'Befolkningstäthet', script: 'density.js' },
-     { name: 'Invandring', script: 'immigration.js' },
-     { name: 'Populäraste parti', script: 'popularParty.js' },
+     { name: 'Regioner (Norr/Söder)', script: 'geografisk/regions.js' },
+     { name: 'Stad vs Landsbygd', script: 'geografisk/urban-rural.js' },
+     { name: 'Befolkningstäthet', script: 'geografisk/density.js' },
+     { name: 'Invandring', script: 'geografisk/immigration.js' },
+     { name: 'Populäraste parti', script: 'geografisk/popularParty.js' },
     
   ]},
 
   { name: 'Förändring 2018–2022', sub: [
-      { name: 'Partiförändringar', script: 'party-change.js' },
-      { name: 'Största vinnare & förlorare', script: 'top-changes.js' },
-      { name: 'Regionala förändringar', script: 'regional-change.js' }
+      { name: 'Partiförändringar', script: 'forandring/party-change.js' },
+      { name: 'Största vinnare & förlorare', script: 'forandring/top-changes.js' },
+      { name: 'Regionala förändringar', script: 'forandring/regional-change.js' }
 ]}, 
 
   { name: 'källor', script: 'sources.js' },
