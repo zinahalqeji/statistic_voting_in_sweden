@@ -5,9 +5,9 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
-// =======================
-// INTRODUCTION
-// =======================
+
+// Intro text
+
 addMdToPage(`
 ## Jämförelse av valresultat mellan 2018 och 2022
 
@@ -28,9 +28,9 @@ Dessa mått visualiseras i två separata diagram (ett per valår) samt ett tredj
 `);
 
 
-// =======================
-// PARTY SELECTION
-// =======================
+
+// Partivallet
+
 const allParties = [...new Set(electionResults.map(r => r.parti))].sort();
 let chosenParti = addDropdown("Välj parti", allParties);
 
@@ -38,9 +38,9 @@ let chosenParti = addDropdown("Välj parti", allParties);
 let electionResultsForWork = electionResults;
 
 
-// =======================
-// PARTY COLORS
-// =======================
+
+// Parti färger
+
 const partyColors = {
   'Arbetarepartiet-Socialdemokraterna': '#EE2020',
   'Moderaterna': '#1D74BB',
@@ -56,9 +56,9 @@ let chosenColor = partyColors[chosenParti] || "#888888";
 let otherColor = "#cccccc";
 
 
-// =======================
-// FUNCTION: DRAW CHART FOR A YEAR
-// =======================
+
+// FUNCTION: Rita diagram och visa resultat för ett givet år
+
 function drawYearChart(year) {
 
   const totalVotes = electionResultsForWork.reduce((sum, r) =>
@@ -73,7 +73,8 @@ function drawYearChart(year) {
 
   const percent = ((partyVotes / totalVotes) * 100).toFixed(1);
 
-  // Draw chart
+  // Rita diagram
+
   drawGoogleChart({
     type: "BarChart",
     data: [
@@ -91,7 +92,8 @@ function drawYearChart(year) {
     }
   });
 
-  // Explanation text
+  // Visa resultat i textform
+
   addMdToPage(`
 ### Resultat – ${year}
 
@@ -105,9 +107,8 @@ function drawYearChart(year) {
 }
 
 
-// =======================
-// DRAW CHARTS FOR 2018 & 2022
-// =======================
+// Rita diagram för 2018 & 2022
+
 addMdToPage("## Resultat för 2018");
 const percent2018 = drawYearChart(2018);
 
@@ -115,9 +116,8 @@ addMdToPage("## Resultat för 2022");
 const percent2022 = drawYearChart(2022);
 
 
-// =======================
-// STATISTICAL CHANGE ANALYSIS
-// =======================
+// Statistisk analys av förändringen
+
 const change = (percent2022 - percent2018).toFixed(1);
 
 const changeText =
@@ -128,9 +128,8 @@ const changeText =
       : `Stödet är **oförändrat** mellan valen.`;
 
 
-// =======================
-// CHANGE CHART
-// =======================
+// Ändringsdiagram
+
 drawGoogleChart({
   type: "ColumnChart",
   data: [
@@ -147,9 +146,8 @@ drawGoogleChart({
 });
 
 
-// =======================
-// INTERPRETATION
-// =======================
+// Tolkning av resultatet
+
 addMdToPage(`
 ## Statistisk analys av förändringen
 
