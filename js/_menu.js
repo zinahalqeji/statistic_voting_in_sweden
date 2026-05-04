@@ -1,4 +1,4 @@
-createMenu('🇸🇪 Vad påverkar röstning i Sverige (2018–2022)?', [
+createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
 
   { name: 'Introduktion', script: 'intro.js' },
 
@@ -38,7 +38,7 @@ createMenu('🇸🇪 Vad påverkar röstning i Sverige (2018–2022)?', [
       { name: 'Regionala förändringar', script: 'regional-change.js' }
 ]}, 
 
-  { name: 'Data & källor', script: 'sources.js' },
+  { name: 'källor', script: 'sources.js' },
   { name: 'Slutsats', script: 'conclusion.js' },
 
 ]);
