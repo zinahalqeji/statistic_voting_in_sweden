@@ -5,19 +5,19 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
-
-// Introduktion
-
+// =======================
+// INTRODUCTION
+// =======================
 addMdToPage(`
 ## Jämförelse av valresultat mellan 2018 och 2022
 
 ### Syfte
-Syftet med denna sida är att analysera hur stödet för ett valt riksdagsparti har förändrats mellan riksdagsvalen 2018 och 2022 i ett urval av svenska kommuner. Genom att studera partiets andel av rösterna över tid kan vi identifiera om stödet ökar, minskar eller förblir stabilt.
+Syftet med denna sida är att analysera hur stödet för ett valt riksdagsparti har förändrats mellan riksdagsvalen 2018 och 2022 på nationell nivå. Genom att studera partiets andel av rösterna över tid kan vi identifiera om stödet ökar, minskar eller förblir stabilt.
 
 ### Analysupplägg
-Analysen bygger på summerade röster från 20 kommuner som representerar olika geografiska och demografiska förutsättningar. För varje parti beräknas:
+Analysen bygger på röster från **samtliga 290 kommuner** i Sverige. För varje parti beräknas:
 
-- totalt antal röster i urvalet  
+- totalt antal röster i hela landet  
 - partiets andel av rösterna för respektive valår  
 - förändring i procentenheter mellan 2018 och 2022  
 
@@ -28,27 +28,19 @@ Dessa mått visualiseras i två separata diagram (ett per valår) samt ett tredj
 `);
 
 
-  // Filterinställningar
-  
-const selectedCommunes = [
-  'Flen','Perstorp','Eskilstuna','Malmö','Fagersta','Sandviken',
-  'Ronneby','Filipstad','Södertälje','Söderhamn',
-  'Pajala','Kiruna','Kungsbacka','Tjörn','Öckerö',
-  'Krokom','Sotenäs','Gällivare','Habo','Mörbylånga'
-];
+// =======================
+// PARTY SELECTION
+// =======================
+const allParties = [...new Set(electionResults.map(r => r.parti))].sort();
+let chosenParti = addDropdown("Välj parti", allParties);
 
-const selectedParties = [...new Set(electionResults.map(r => r.parti))].sort();
-let chosenParti = addDropdown("Välj parti", selectedParties);
-
-let electionResultsForWork = electionResults.filter(r =>
-  r &&
-  selectedCommunes.includes(r.kommun) &&
-  selectedParties.includes(r.parti)
-);
+// Use ALL kommuner — no filtering by kommun
+let electionResultsForWork = electionResults;
 
 
-// Parti färger
-
+// =======================
+// PARTY COLORS
+// =======================
 const partyColors = {
   'Arbetarepartiet-Socialdemokraterna': '#EE2020',
   'Moderaterna': '#1D74BB',
@@ -64,8 +56,9 @@ let chosenColor = partyColors[chosenParti] || "#888888";
 let otherColor = "#cccccc";
 
 
-// FUNKTION: Rita diagram för ett år
-
+// =======================
+// FUNCTION: DRAW CHART FOR A YEAR
+// =======================
 function drawYearChart(year) {
 
   const totalVotes = electionResultsForWork.reduce((sum, r) =>
@@ -80,8 +73,7 @@ function drawYearChart(year) {
 
   const percent = ((partyVotes / totalVotes) * 100).toFixed(1);
 
-  // Rita diagram
-  
+  // Draw chart
   drawGoogleChart({
     type: "BarChart",
     data: [
@@ -89,7 +81,7 @@ function drawYearChart(year) {
       ["Röster", partyVotes, totalVotes - partyVotes]
     ],
     options: {
-      title: `Andel av röster för ${chosenParti} (${year})`,
+      title: `Andel av röster för ${chosenParti} (${year}) – Nationellt`,
       height: 300,
       colors: [chosenColor, otherColor],
       legend: { position: "top" },
@@ -99,22 +91,23 @@ function drawYearChart(year) {
     }
   });
 
-  // Förklarande text
-
+  // Explanation text
   addMdToPage(`
 ### Resultat – ${year}
 
 - **Antal röster för ${chosenParti}:** ${partyVotes.toLocaleString("sv-SE")}
 - **Antal röster för övriga partier:** ${(totalVotes - partyVotes).toLocaleString("sv-SE")}
-- **Totalt antal röster i urvalet:** ${totalVotes.toLocaleString("sv-SE")}
+- **Totalt antal röster i Sverige:** ${totalVotes.toLocaleString("sv-SE")}
 - **Andel av totalen:** ${percent}%
 `);
 
   return percent;
 }
 
-// Rita diagram för 2018 & 2022
 
+// =======================
+// DRAW CHARTS FOR 2018 & 2022
+// =======================
 addMdToPage("## Resultat för 2018");
 const percent2018 = drawYearChart(2018);
 
@@ -122,8 +115,9 @@ addMdToPage("## Resultat för 2022");
 const percent2022 = drawYearChart(2022);
 
 
-// Statistisk förändringsanalys
-
+// =======================
+// STATISTICAL CHANGE ANALYSIS
+// =======================
 const change = (percent2022 - percent2018).toFixed(1);
 
 const changeText =
@@ -134,7 +128,9 @@ const changeText =
       : `Stödet är **oförändrat** mellan valen.`;
 
 
-
+// =======================
+// CHANGE CHART
+// =======================
 drawGoogleChart({
   type: "ColumnChart",
   data: [
@@ -143,7 +139,7 @@ drawGoogleChart({
     ["2022", Number(percent2022), chosenColor]
   ],
   options: {
-    title: `Förändring i stöd för ${chosenParti} (2018–2022)`,
+    title: `Förändring i stöd för ${chosenParti} (2018–2022) – Nationellt`,
     height: 350,
     legend: "none",
     vAxis: { title: "Andel (%)" }
@@ -151,19 +147,20 @@ drawGoogleChart({
 });
 
 
-// Tolkning
-
+// =======================
+// INTERPRETATION
+// =======================
 addMdToPage(`
 ## Statistisk analys av förändringen
 
-För det valda partiet **${chosenParti}** ser vi följande utveckling mellan 2018 och 2022:
+För det valda partiet **${chosenParti}** ser vi följande utveckling mellan 2018 och 2022 på nationell nivå:
 
 - **Andel 2018:** ${percent2018}%
 - **Andel 2022:** ${percent2022}%
 - **Förändring:** ${change} procentenheter  
 - ${changeText}
 
-Denna förändring ger en tydlig indikation på hur partiets stöd utvecklats i de 20 kommuner som ingår i analysen. Resultatet utgör en grund för vidare studier där socioekonomiska faktorer kan kopplas till förändringar i röstningsmönster.
+Denna förändring visar hur partiets nationella stöd har utvecklats mellan valen. Resultatet utgör en grund för vidare studier där socioekonomiska faktorer kan kopplas till förändringar i röstningsmönster.
 `);
 
 }
