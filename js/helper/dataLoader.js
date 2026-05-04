@@ -1,6 +1,3 @@
-// IMPORTANT: No if() outside functions!
-// Only export data
-
 // SQLITE
 dbQuery.use('counties-sqlite');
 export let countyInfo = await dbQuery('SELECT * FROM countyInfo');

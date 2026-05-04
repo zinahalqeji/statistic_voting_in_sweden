@@ -1,37 +1,55 @@
+import dbInfoOk, { displayDbNotOkText } from "./helper/dbInfoOk.js";
+
 addMdToPage(`
-# 🇸🇪 Sweden Elections Analysis  
-### *What explains changes in voting between 2018 and 2022?*
+# 🇸🇪 Vad påverkar röstning i Sverige?
 
-Sweden changed between 2018 and 2022 — but **why**?
+## En berättelse om valet 2018–2022
 
-This project explores three possible explanations:
+Riksdagsvalet 2022 markerade en tydlig förändring i svensk politik. 
+Samtidigt som mittenpartier tappade stöd, stärkte både 
+**Socialdemokraterna** och **Sverigedemokraterna** sina positioner.
 
-- 💰 **Income** — Do richer municipalities shift differently?
-- 👥 **Age** — Do older or younger areas change more?
-- 📍 **Geography** — Are there regional or urban–rural patterns?
+Detta väcker en central fråga:
 
-We use real data from:
-- SCB (income & age)
-- Valmyndigheten (election results)
-- Geo databases (location)
+> Vad är det egentligen som påverkar hur människor röstar?
 
 ---
 
-## 🔍 How to navigate the project
+## Syfte
 
-Use the menu on the left:
+Syftet med denna dashboard är att analysera hur olika faktorer påverkar röstning i Sverige.
 
-1. **Income vs Voting** — Person 2  
-2. **Age vs Voting** — Person 3  
-3. **Geography** — Person 4  
-4. **Hypothesis Testing** — group  
-5. **Sources** — group  
-6. **Conclusion** — group  
+Vi undersöker sambandet mellan:
+- Ekonomi (inkomst, arbetslöshet)
+- Demografi (ålder, utbildning)
+- Geografi (region, stad/land)
+- Valresultat (2018 vs 2022)
 
-Each page includes:
-- Clear charts  
-- Clean explanations  
-- Simple, honest interpretations  
+---
 
-Let’s explore how Sweden’s political landscape shifted.
+## Hypotes
+
+Vi utgår från att:
+
+> Ökad otrygghet i samhället leder till att väljare söker sig till partier med tydliga budskap.
+
+Vi tror att:
+- Socialdemokraterna växer genom fokus på trygghet och välfärd  
+- Sverigedemokraterna växer genom fokus på migration, brottslighet och samhällsförändring  
+
+---
+
+## Bakgrund
+
+Mellan 2018 och 2022 präglades Sverige av:
+
+- En global pandemi  
+- Hög inflation och stigande räntor  
+- Kriget i Ukraina  
+- Ökad debatt om migration och integration  
+- Förändringar på arbetsmarknaden  
+
+Dessa faktorer skapade en miljö där många väljare upplevde osäkerhet.
+
+---
 `);

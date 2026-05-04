@@ -1,4 +1,4 @@
-import dbInfoOk, { displayDbNotOkText } from "./dbInfoOk.js";
+import dbInfoOk, { displayDbNotOkText } from "./helper/dbInfoOk.js";
 
 addMdToPage(`
   ## Kom igång!
