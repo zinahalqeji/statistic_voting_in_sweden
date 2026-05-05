@@ -5,24 +5,24 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
-  
-  // Into
-
+  // =======================
+  // INTRO
+  // =======================
   addMdToPage(`
 # Vinnare & förlorare (2018–2022)
 
 ### Syfte
-Denna sida analyserar vilka riksdagspartier som har ökat respektive minskat mest i antal röster mellan valen 2018 och 2022. Analysen bygger på röster från **samtliga 290 kommuner** i Sverige.
-
-### Frågor som besvaras
-- Vilka partier är de största **vinnarna** i antal röster?  
-- Vilka partier är de största **förlorarna**?  
-- Hur stora är förändringarna nationellt?  
+Denna sida analyserar vilka riksdagspartier som har ökat respektive minskat mest i antal röster mellan valen 2018 och 2022.
 `);
 
+  // =======================
+  // DROPDOWN: Visa som
+  // =======================
+  let viewMode = addDropdown("Visa som", ["Antal röster", "Procent (%)"]);
 
-  // Parti färger
-
+  // =======================
+  // PARTY COLORS
+  // =======================
   const partyColors = {
     'Socialdemokraterna': '#EE2020',
     'Arbetarepartiet-Socialdemokraterna': '#EE2020',
@@ -35,16 +35,14 @@ Denna sida analyserar vilka riksdagspartier som har ökat respektive minskat mes
     'Miljöpartiet': '#83CF39'
   };
 
-
-
-  // Utvinna alla partier
- 
+  // =======================
+  // EXTRACT PARTIES
+  // =======================
   const allParties = [...new Set(electionResults.map(r => r.parti))];
 
-
-
-  // Beräkna det totala antalet röster per parti 
-
+  // =======================
+  // CALCULATE TOTALS
+  // =======================
   let changes = [];
 
   for (let parti of allParties) {
@@ -67,50 +65,83 @@ Denna sida analyserar vilka riksdagspartier som har ökat respektive minskat mes
     });
   }
 
+  // =======================
+  // NATIONAL TOTALS FOR %
+  // =======================
+  const total2018 = electionResults.reduce((s, r) => s + Number(r.roster2018), 0);
+  const total2022 = electionResults.reduce((s, r) => s + Number(r.roster2022), 0);
 
-  // Sortera efter största ökningen i antal röster (vinnare överst)
+  // Add percent values
+  changes = changes.map(row => ({
+    ...row,
+    percent2018: (row.votes2018 / total2018) * 100,
+    percent2022: (row.votes2022 / total2022) * 100,
+    percentDiff: ((row.votes2022 / total2022) * 100) - ((row.votes2018 / total2018) * 100)
+  }));
 
-  changes.sort((a, b) => b.diff - a.diff);
+  // =======================
+  // SORT BASED ON DROPDOWN
+  // =======================
+  if (viewMode === "Antal röster") {
+    changes.sort((a, b) => b.diff - a.diff);
+  } else {
+    changes.sort((a, b) => b.percentDiff - a.percentDiff);
+  }
 
-
+  // =======================
+  // RANKING TEXT
+  // =======================
   addMdToPage(`
-## Rangordning: Vinnare och förlorare i antal röster
+## Rangordning: Vinnare och förlorare (${viewMode})
 `);
 
   let rankingText = "";
 
   changes.forEach((row, index) => {
-    const arrow = row.diff > 0 ? "⬆️" : row.diff < 0 ? "⬇️" : "⏺";
-    rankingText += `**${index + 1}. ${row.parti}** — ${arrow} ${row.diff.toLocaleString("sv-SE")} röster  
+    const arrow = (viewMode === "Antal röster")
+      ? (row.diff > 0 ? "⬆️" : row.diff < 0 ? "⬇️" : "⏺")
+      : (row.percentDiff > 0 ? "⬆️" : row.percentDiff < 0 ? "⬇️" : "⏺");
+
+    const value = (viewMode === "Antal röster")
+      ? `${row.diff.toLocaleString("sv-SE")} röster`
+      : `${row.percentDiff.toFixed(2)} procentenheter`;
+
+    rankingText += `**${index + 1}. ${row.parti}** — ${arrow} ${value}  
 `;
   });
 
   addMdToPage(rankingText);
 
-
-  // Förbered data för diagram
-
+  // =======================
+  // CHART DATA
+  // =======================
   let chartData = [['Parti', 'Förändring', { role: 'style' }]];
 
   changes.forEach(row => {
     const color = partyColors[row.parti] || '#888888';
-    chartData.push([row.parti, row.diff, `color: ${color}`]);
+
+    const value = (viewMode === "Antal röster")
+      ? row.diff
+      : row.percentDiff;
+
+    chartData.push([row.parti, value, `color: ${color}`]);
   });
 
-
-  // Rita diagram
-
+  // =======================
+  // DRAW CHART
+  // =======================
   drawGoogleChart({
     type: 'ColumnChart',
     data: chartData,
     options: {
-      title: 'Förändring i antal röster per parti (2022 jämfört med 2018)',
+      title: `Förändring per parti (2018–2022) — ${viewMode}`,
       height: 500,
       width: 1250,
       hAxis: { title: 'Parti' },
-      vAxis: { title: 'Förändring i antal röster' },
+      vAxis: { title: viewMode },
       legend: 'none',
       bar: { groupWidth: '90%' }
     }
   });
+
 }
