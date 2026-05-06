@@ -57,7 +57,7 @@ else {
   (Endast de 25 första av många poster.)
   `);
   dbQuery.use('riksdagsval-neo4j');
-  let electionResults = await dbQuery('MATCH (n:Partiresultat) RETURN n LIMIT 25');
+  let electionResults = await dbQuery('MATCH (n:Partiresultat) RETURN n ');
   tableFromData({
     data: electionResults
       // egenskaper/kolumner kommer i lite konstig ordning från Neo - mappa i trevligare ordning
