@@ -27,17 +27,17 @@ Dessa mått visualiseras i två separata diagram (ett per valår) samt ett tredj
 `);
 
 
-  // =======================
-  // DROPDOWNS (MUST COME EARLY)
-  // =======================
+
+  // Dropdowns
+
   const allParties = [...new Set(electionResults.map(r => r.parti))].sort();
   let chosenParti = addDropdown("Välj parti", allParties);
 
   let viewMode = addDropdown("Visa som", ["Procent (%)", "Antal röster"]);
 
-  // =======================
-  // PARTY COLORS
-  // =======================
+
+  // Partifärger 
+
   const partyColors = {
     'Arbetarepartiet-Socialdemokraterna': '#EE2020',
     'Socialdemokraterna': '#EE2020',
@@ -53,9 +53,9 @@ Dessa mått visualiseras i två separata diagram (ett per valår) samt ett tredj
   let chosenColor = partyColors[chosenParti] || "#888888";
   let otherColor = "#cccccc";
 
-  // =======================
-  // HELPER: TOTALS FOR A YEAR
-  // =======================
+
+  // Totals för ett år
+
   function getTotals(year) {
     const totalVotes = electionResults.reduce((s, r) =>
       s + Number(year === 2018 ? r.roster2018 : r.roster2022), 0
@@ -72,9 +72,9 @@ Dessa mått visualiseras i två separata diagram (ett per valår) samt ett tredj
     return { totalVotes, partyVotes, percent };
   }
 
-  // =======================
-  // DRAW CHART FOR ONE YEAR
-  // =======================
+
+  // Rita diagram för varje år
+
   function drawYearChart(year) {
     const { totalVotes, partyVotes, percent } = getTotals(year);
 
@@ -129,18 +129,16 @@ Dessa mått visualiseras i två separata diagram (ett per valår) samt ett tredj
     return { percent, partyVotes };
   }
 
-  // =======================
-  // DRAW 2018 + 2022
-  // =======================
+
+  // Rita 2018 + 2022
+
   addMdToPage("## Resultat för 2018");
   const { percent: percent2018, partyVotes: votes2018 } = drawYearChart(2018);
 
   addMdToPage("## Resultat för 2022");
   const { percent: percent2022, partyVotes: votes2022 } = drawYearChart(2022);
 
-  // =======================
-  // CHANGE CHART
-  // =======================
+
   let changeValue2018, changeValue2022, changeChartTitle, changeAxisTitle;
 
   if (viewMode === "Procent (%)") {
@@ -170,9 +168,9 @@ Dessa mått visualiseras i två separata diagram (ett per valår) samt ett tredj
     }
   });
 
-  // =======================
-  // INTERPRETATION (DYNAMIC)
-  // =======================
+
+  // Tolkning av förändringen
+
   addMdToPage(`## Statistisk analys av förändringen`);
 
   if (viewMode === "Procent (%)") {
