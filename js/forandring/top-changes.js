@@ -5,7 +5,8 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
- // Intro
+
+  // Intro
 
   addMdToPage(`
 # Vinnare & förlorare (2018–2022)
@@ -18,11 +19,10 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
 - Vilka partier är de största **förlorarna**?  
 - Hur stora är förändringarna nationellt – i **antal röster** och i **procent**?  
 - Hur fördelas partiernas vinst/förlust **geografiskt per län**?  
- 
-`);
+  `);
 
 
-  // Fixera kommunnamn i lanKommun (för att matcha med electionResults)
+  // 🧹 Fixera kommunnamn (för join)
 
   lanKommun.forEach(row => {
     if (row.kommun.toLowerCase() === "strängns") {
@@ -30,14 +30,15 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
     }
   });
 
-  // Skapa en snabb uppslagning från kommun till län
+
+  // Join-kommun-till-län för geografisk analys
 
   const kommunToLan = new Map();
   lanKommun.forEach(row => kommunToLan.set(row.kommun, row.lan));
 
-
-  //  Partifärger (för att matcha valresultat.se och skapa enhetliga diagram)
-
+ 
+  // Partifärger (för diagram)
+ 
   const partyColors = {
     'Socialdemokraterna': '#EE2020',
     'Arbetarepartiet-Socialdemokraterna': '#EE2020',
@@ -51,12 +52,12 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
   };
 
 
-  // Aggregera röster per parti och räkna ut förändringar
+  // Aggregera röster per parti och år
 
   const partyStats = new Map();
 
   electionResults.forEach(row => {
-    const parti = row.parti.trim();  
+    const parti = row.parti.trim();
 
     if (!partyStats.has(parti)) {
       partyStats.set(parti, { votes2018: 0, votes2022: 0 });
@@ -76,8 +77,8 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
   }));
 
 
-  // Dropdown för att välja visningsläge (antal röster vs procent)
- 
+  // Dropdown: Visa som (ranking + diagram)
+
   addMdToPage(`### Visa nationell förändring som`);
 
   addDropdown(
@@ -86,12 +87,11 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
     "Antal röster"
   );
 
-  // Get dropdown element
   const selects0 = document.querySelectorAll("select");
   const rankingModeSelect = selects0[selects0.length - 1];
 
 
-  // Ranking av vinnare/förlorare baserat på valt visningsläge
+  // Ranking + nationellt diagram
 
   addMdToPage(`## Nationell ranking`);
 
@@ -117,16 +117,14 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
   }
 
 
-  // Chart som visar förändring per parti i antal röster eller procent
+  // Nationellt diagram (förändring i antal röster eller procent)
 
   function getNationalChartData(mode) {
     const data = [['Parti', 'Förändring', { role: 'style' }]];
 
     changes.forEach(row => {
       const color = partyColors[row.parti] || '#888';
-
       let value = mode === "Antal röster" ? row.diff : row.pct;
-
       data.push([row.parti, value, `color: ${color}`]);
     });
 
@@ -152,21 +150,17 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
     });
   }
 
-
-  // Event listener för dropdown som uppdaterar både ranking och diagram när användaren ändrar visningsläge
-
   rankingModeSelect.addEventListener("change", () => {
     const mode = rankingModeSelect.value;
     drawRanking(mode);
     drawNationalChart(mode);
   });
 
-  // First draw
   drawRanking(rankingModeSelect.value);
   drawNationalChart(rankingModeSelect.value);
 
 
-  // Aggregera förändringar per län för valt parti
+  //Aggreggera röster per parti och år (för geografisk analys)
 
   function getLanData(parti) {
     const lanStats = new Map();
@@ -184,8 +178,22 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
     return Array.from(lanStats.entries());
   }
 
+ 
+  // Top 3 starkaste och svagaste län (för geografisk analys)
 
-  // Pie chart som visar vinst/förlust per län för valt parti
+  function getTopAndBottomLan(parti) {
+    const lanData = getLanData(parti);
+
+    const sorted = [...lanData].sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+
+    const strongest = sorted.filter(([lan, diff]) => diff > 0).slice(0, 3);
+    const weakest = sorted.filter(([lan, diff]) => diff < 0).slice(0, 3);
+
+    return { strongest, weakest };
+  }
+
+
+  // Pie-chart: Vinst/förlust per län (för geografisk analys)
 
   function drawLanPieChart(parti) {
     const lanData = getLanData(parti);
@@ -206,15 +214,62 @@ Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest 
         height: 550,
         width: 900,
         pieHole: 0.35,
-        legend: { position: "right" },
+
+        //Inställningar för legend
+        legend: {
+          position: "right",
+          textStyle: { fontSize: 14 },
+        },
+
         slices: slices,
         tooltip: { text: "both" }
       }
     });
+
+    //Förklaring av färger (för geografisk analys)
+    addMdToPage(`
+<div style="display:flex; gap:20px; margin-top:10px;">
+  <div style="display:flex; align-items:center; gap:6px;">
+    <div style="width:16px; height:16px; background:#2ECC71; border:1px solid #000;"></div>
+    <span>Ökning i antal röster</span>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:6px;">
+    <div style="width:16px; height:16px; background:#E74C3C; border:1px solid #000;"></div>
+    <span>Minskning i antal röster</span>
+  </div>
+</div>
+`, { replace: false });
+
+    // Topp 3 starkaste och svagaste län (för geografisk analys)
+    const { strongest, weakest } = getTopAndBottomLan(parti);
+
+    let md = `### Topp 3 starkaste län för ${parti}\n`;
+    strongest.forEach(([lan, diff], i) => {
+      md += `${i + 1}. **${lan}** — +${diff.toLocaleString("sv-SE")} röster\n`;
+    });
+
+    md += `\n### Topp 3 svagaste län för ${parti}\n`;
+    weakest.forEach(([lan, diff], i) => {
+      md += `${i + 1}. **${lan}** — ${diff.toLocaleString("sv-SE")} röster\n`;
+    });
+
+    //Statistisk kommentar (för geografisk analys)
+    md += `
+### Statistisk kommentar
+Förändringarna i röster per län visar hur ${parti} har utvecklats geografiskt mellan valen 2018 och 2022.  
+- De starkaste länen representerar områden där partiet har haft **stabilt eller ökande väljarstöd**.  
+- De svagaste länen visar **geografiska förluster**, vilket kan bero på lokala frågor, demografiska förändringar eller konkurrens från andra partier.  
+
+Dessa siffror bygger på **hela populationen av röster**, inte stickprov. Därför behövs inga konfidensintervall — förändringarna är **exakta**, inte uppskattningar.  
+Variationerna mellan län kan däremot tolkas som ett mått på **regional spridning** i partiets väljarstöd.  
+`;
+
+    addMdToPage(md, { replace: false });
   }
 
 
-  // Dropdown för att välja parti och visa geografisk analys per län
+  // Dropdown + initialt diagram för geografisk analys
 
   addMdToPage(`## Geografisk analys per län`);
 
