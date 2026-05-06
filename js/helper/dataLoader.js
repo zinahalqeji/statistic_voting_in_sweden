@@ -2,7 +2,7 @@
 dbQuery.use('counties-sqlite');
 export let countyInfo = await dbQuery('SELECT * FROM countyInfo');
 export let unemployment = await dbQuery('SELECT * FROM arbetsloshet_by_lan');
-//export let income = await dbQuery('SELECT * FROM income_kommun');
+export let income = await dbQuery('SELECT * FROM income_kommun');
 export let lanKommun = await dbQuery('SELECT * FROM lan_kommun');
 export let valdataKommun = await dbQuery('SELECT * FROM valdata_kommun');
 
