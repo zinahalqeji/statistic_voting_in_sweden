@@ -35,7 +35,7 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
   { name: 'Förändring 2018–2022', sub: [
       { name: 'Partiförändringar', script: 'forandring/partyChange.js' },
       { name: 'Största vinnare & förlorare', script: 'forandring/top-changes.js' },
-      { name: 'Regionala förändringar', script: 'forandring/regional-change.js' }
+      { name: 'Regionala politiska skiften', script: 'forandring/regional-politiska.js' }
 ]}, 
 
   { name: 'källor', script: 'sources.js' },
