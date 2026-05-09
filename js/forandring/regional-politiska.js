@@ -13,7 +13,7 @@ if (!dbInfoOk) {
 #  Regionala politiska skiften (2018–2022)
 
 <div style="
-background: linear-gradient(135deg,#1e3c72 0%, #2a5298 100%);
+background: linear-gradient(135deg,#1e3c72 0%, #192c4e 100%);
 padding: 30px;
 border-radius: 16px;
 color: white;
