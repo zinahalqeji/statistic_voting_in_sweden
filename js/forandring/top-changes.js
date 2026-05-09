@@ -7,9 +7,7 @@ if (!dbInfoOk) {
 
 } else {
 
-  // =====================================================
-  // INTRO
-  // =====================================================
+  // Intro
 
   addMdToPage(`
 # Vinnare & förlorare (2018–2022)
@@ -28,9 +26,7 @@ Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar 
 `);
 
 
-  // =====================================================
-  // FIX KOMMUNNAMN
-  // =====================================================
+  // Fixa kommun name issue in lanKommun data
 
   lanKommun.forEach(row => {
 
@@ -40,10 +36,7 @@ Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar 
 
   });
 
-
-  // =====================================================
   // KOMMUN → LÄN
-  // =====================================================
 
   const kommunToLan = new Map();
 
@@ -51,11 +44,8 @@ Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar 
     kommunToLan.set(row.kommun, row.lan);
   });
 
-
-  // =====================================================
-  // PARTIFÄRGER
-  // =====================================================
-
+  // Parti färger
+ 
   const partyColors = {
     'Socialdemokraterna': '#EE2020',
     'Arbetarepartiet-Socialdemokraterna': '#EE2020',
@@ -68,10 +58,7 @@ Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar 
     'Miljöpartiet': '#83CF39'
   };
 
-
-  // =====================================================
-  // TOTALA RÖSTER
-  // =====================================================
+  // Total röster per val
 
   const totalVotes2018 =
     electionResults.reduce((sum, r) =>
@@ -81,10 +68,8 @@ Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar 
     electionResults.reduce((sum, r) =>
       sum + Number(r.roster2022 || 0), 0);
 
-
-  // =====================================================
-  // AGGREGERA PARTIDATA
-  // =====================================================
+  
+  // Aggregera röster per parti
 
   const partyStats = new Map();
 
@@ -108,10 +93,7 @@ Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar 
 
   });
 
-
-  // =====================================================
-  // BERÄKNA RÖSTANDELAR
-  // =====================================================
+  // Beräkna röstandelsförändring per parti
 
   const changes =
     Array.from(partyStats.entries()).map(([parti, stats]) => {
@@ -134,11 +116,8 @@ Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar 
 
     });
 
-
-  // =====================================================
-  // STATISTISKA FUNKTIONER
-  // =====================================================
-
+  // Statistiska funktioner
+  
   function mean(arr) {
 
     return arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -156,10 +135,7 @@ Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar 
 
   }
 
-
-  // =====================================================
-  // NATIONELL RANKING
-  // =====================================================
+  // Nationell ranking
 
   addMdToPage(`
 ## Nationell ranking
@@ -188,10 +164,7 @@ ${arrow} ${row.change.toFixed(2)} procentenheter
 
   addMdToPage(rankingText);
 
-
-  // =====================================================
-  // NATIONELLT DIAGRAM
-  // =====================================================
+  // Nationell förändring per parti (stapeldiagram)
 
   const nationalChartData = [
     ['Parti', 'Förändring', { role: 'style' }]
@@ -238,10 +211,7 @@ ${arrow} ${row.change.toFixed(2)} procentenheter
 
   });
 
-
-  // =====================================================
-  // STATISTISK SPRIDNING
-  // =====================================================
+  // Statiska spridningen mellan partierna
 
   const allPartyChanges =
     changes.map(r => r.change);
@@ -271,10 +241,7 @@ ${arrow} ${row.change.toFixed(2)} procentenheter
 Resultaten visar att förändringarna mellan partierna var måttliga. Standardavvikelsen på 1.53 procentenheter innebär att partiernas utveckling skilde sig åt, men utan extrema rörelser. Den största ökningen var +3.00 procentenheter och den största minskningen –1.89 procentenheter, vilket tyder på att vissa partier stärkte sitt stöd medan andra tappade något, men inga partier upplevde dramatiska förändringar. Sammantaget pekar detta på ett relativt stabilt väljarbeteende mellan valen 2018 och 2022.
 `);
 
-
-  // =====================================================
-  // GEOGRAFISK ANALYS
-  // =====================================================
+  // Geografisk analys per län
 
   function getLanData(parti) {
 
@@ -306,11 +273,8 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 
     });
 
-
-    // =====================================================
-    // TOTALA RÖSTER PER LÄN
-    // =====================================================
-
+    // Total röster per län
+  
     electionResults.forEach(row => {
 
       const lan =
@@ -344,10 +308,7 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 
   }
 
-
-  // =====================================================
-  // TOPP / BOTTEN LÄN
-  // =====================================================
+  // Topp 3 och botten 3 län per parti
 
   function getTopAndBottomLan(parti) {
 
@@ -371,11 +332,8 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 
   }
 
-
-  // =====================================================
-  // PIE CHART
-  // =====================================================
-
+  // Pie chart per län för valt parti
+ 
   function drawLanPieChart(parti) {
 
     const lanData =
@@ -440,11 +398,8 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 
     });
 
-
-    // =====================================================
-    // FÖRKLARING
-    // =====================================================
-
+    // Förklarande text under diagrammet
+  
     addMdToPage(`
 <div style="display:flex; gap:20px; margin-top:10px;">
 
@@ -461,10 +416,7 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 </div>
 `);
 
-
-    // =====================================================
-    // TOPP 3 / BOTTEN 3
-    // =====================================================
+    // Topp 3 och botten 3 län per parti
 
     const {
       strongest,
@@ -508,10 +460,7 @@ Eftersom analysen bygger på hela populationen av registrerade röster beskriver
 
   }
 
-
-  // =====================================================
-  // DROPDOWN GEOGRAFISK ANALYS
-  // =====================================================
+  // Dropdown för att välja parti och visa geografisk analys per län
 
   addMdToPage(`
 ## Geografisk analys per län
@@ -538,9 +487,7 @@ Eftersom analysen bygger på hela populationen av registrerade röster beskriver
   drawLanPieChart(partiSelect.value);
 
 
-  // =====================================================
-  // SLUTSATS
-  // =====================================================
+  // Slutsats
 
   const winners =
     [...changes]
