@@ -13,12 +13,11 @@ if (!dbInfoOk) {
 # Regionala politiska skiften (2018–2022)
 
 <div style="
-background: linear-gradient(135deg,#1e3c72 0%, #192c4e 100%);
-padding: 30px;
-border-radius: 16px;
-color: white;
-margin-bottom: 30px;
-box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+background:#F1F5F9;
+padding:30px;
+border-radius:16px;
+margin-top:20px;
+border-left:8px solid #192c4e;
 ">
 
 ## Hur förändrades Sveriges län politiskt?
@@ -435,53 +434,19 @@ ${strongestLeft.netShift.toFixed(2)} procentenheter
 - **Största högerskifte:** ${maxShift.toFixed(2)} procentenheter
 - **Största vänsterskifte:** ${minShift.toFixed(2)} procentenheter
 
-### Tolkning
+## Statistisk analys och tolkning
 
-- Genomsnittet visar den övergripande förändringen mellan Sveriges län.
-- Standardavvikelsen visar hur mycket länens politiska förändringar varierade.
-- Ett högre värde innebär större regionala skillnader mellan länen.
-- Max- och minvärden visar de mest extrema politiska skiftena i landet.
+Analysen visar tydliga regionala skillnader i hur väljarnas politiska preferenser förändrades mellan riksdagsvalen 2018 och 2022.
 
-`);
+Genomsnittsvärdet beskriver den övergripande politiska förändringen mellan Sveriges län, medan standardavvikelsen visar hur mycket förändringarna varierade geografiskt. Ett högre värde indikerar större regionala skillnader i den politiska utvecklingen mellan länen.
 
-  // Analys av regionala politiska skiften
-
-  addMdToPage(`
-
-<div style="
-background:#F8FAFC;
-padding:30px;
-border-radius:16px;
-margin-top:40px;
-border-left:8px solid #2563EB;
-">
-
-## Statistisk tolkning
-
-Analysen visar tydliga geografiska skillnader i hur väljarnas politiska
-preferenser förändrades mellan riksdagsvalen 2018 och 2022.
-
-Vissa län uppvisade tydliga rörelser mot högerblocket medan andra län
-utvecklades i riktning mot vänsterblocket.
-
-Eftersom analysen använder röstandelar (%) istället för absoluta röster
-kan resultaten jämföras rättvist mellan län med olika befolkningsstorlek.
-
-</div>
+Resultaten visar att vissa län uppvisade tydliga förskjutningar mot högerblocket, medan andra län utvecklades i riktning mot vänsterblocket. Skillnaderna mellan max- och minvärden illustrerar de mest extrema politiska förändringarna i landet och visar att utvecklingen inte varit jämnt fördelad geografiskt.
 
 `);
 
   // Viktiga observationer
 
   addMdToPage(`
-
-<div style="
-background:#F1F5F9;
-padding:30px;
-border-radius:16px;
-margin-top:20px;
-border-left:8px solid #0EA5E9;
-">
 
 ## Viktiga observationer
 
@@ -492,13 +457,18 @@ border-left:8px solid #0EA5E9;
 - Skillnaderna kan delvis påverkas av socioekonomiska faktorer,
   urbanisering och lokala arbetsmarknadsförhållanden.
 
-</div>
-
 `);
 
   // Slutsats
 
   addMdToPage(`
+<div style="
+background:#F1F5F9;
+padding:30px;
+border-radius:16px;
+margin-top:20px;
+border-left:8px solid #192c4e;
+">
 
 ## Slutsats
 
@@ -519,6 +489,7 @@ och regionala faktorer kan ha haft stor påverkan på valresultaten.
 Eftersom analysen bygger på hela populationen av registrerade röster
 beskriver resultaten faktiska förändringar i valutfallet och inte
 statistiska uppskattningar från ett stickprov.
+</div>
 
 `);
 
