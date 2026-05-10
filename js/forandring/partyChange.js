@@ -417,7 +417,7 @@ Standardavvikelsen visar hur mycket förändringarna varierar mellan kommuner. E
 
   // Slutsats
 
-  addMdToPage(`
+addMdToPage(`
 <div style="
 background:#F1F5F9;
 padding:30px;
@@ -428,20 +428,27 @@ border-left:8px solid #192c4e;
 
 ## Slutsats
 
-Analysen visar hur stödet för ${chosenParti} förändrades mellan riksdagsvalen 2018 och 2022 både på nationell nivå och mellan Sveriges kommuner.
-
-Den nationella röstandelen förändrades från **${percent2018.toFixed(2)}% år 2018** till **${percent2022.toFixed(2)}% år 2022**, vilket motsvarar en förändring på **${changePercent.toFixed(2)} procentenheter**.
-
+Analysen visar att ${chosenParti}
 ${
   changePercent > 0
-    ? `${chosenParti} har därmed stärkt sitt relativa stöd i Sverige mellan de två valen. Resultatet tyder på att partiet lyckades attrahera en större andel väljare år 2022 jämfört med 2018.`
+    ? `ökade sitt nationella väljarstöd`
     : changePercent < 0
-      ? `${chosenParti} har därmed förlorat relativt stöd mellan valen. Resultatet indikerar att en mindre andel väljare röstade på partiet år 2022 jämfört med 2018.`
-      : `${chosenParti} uppvisar ett stabilt väljarstöd där röstandelen i princip var oförändrad mellan de två valen.`
+      ? `minskade sitt nationella väljarstöd`
+      : `behöll ett i stort sett oförändrat väljarstöd`
 }
+mellan riksdagsvalen 2018 och 2022.
 
-Den kommunala analysen visar samtidigt att förändringen inte varit lika stor i hela landet. Vissa kommuner uppvisade betydligt större ökningar eller minskningar än andra, vilket framgår av standardavvikelsen och tabellerna över kommunala förändringar.
+Partiets röstandel förändrades från
+**${percent2018.toFixed(2)}%**
+till
+**${percent2022.toFixed(2)}%**,
+vilket motsvarar
+**${changePercent.toFixed(2)} procentenheter**.
+
+Den kommunala analysen visar samtidigt att utvecklingen varierade mellan olika delar av landet. Vissa kommuner uppvisade betydligt större förändringar än andra, vilket framgår av spridningen i resultaten och standardavvikelsen.
+
+Resultaten indikerar därför att förändringen i väljarstöd inte var geografiskt jämnt fördelad utan varierade regionalt mellan Sveriges kommuner.
+
 </div>
 `);
-
 }
