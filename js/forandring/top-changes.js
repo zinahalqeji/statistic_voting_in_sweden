@@ -9,21 +9,35 @@ if (!dbInfoOk) {
 
   // Intro
 
-  addMdToPage(`
+addMdToPage(`
 # Vinnare & förlorare (2018–2022)
 
-### Syfte
-Denna sida analyserar vilka riksdagspartier som ökade respektive minskade mest mellan valen 2018 och 2022.
+<div style="
+background:#F1F5F9;
+padding:30px;
+border-radius:16px;
+margin-top:20px;
+border-left:8px solid #192c4e;
+">
 
-Analysen bygger på röster från **samtliga 290 kommuner** i Sverige och visar både nationella förändringar och geografiska mönster per län.
+## Vilka partier ökade och vilka tappade mest?
 
-### Frågor som besvaras
-- Vilka partier ökade mest i röstandel?
-- Vilka partier minskade mest i röstandel?
-- Hur stora var förändringarna nationellt i procentenheter?
-- Hur fördelades förändringarna geografiskt mellan Sveriges län?
-- Hur stor var variationen mellan partiernas förändringar?
+Denna analys undersöker hur riksdagspartiernas röstandelar förändrades mellan valen 2018 och 2022.  
+Genom att analysera utvecklingen på nationell nivå och bryta ned resultaten per län kan vi identifiera:
+
+- vilka partier som ökade mest i röstandel  
+- vilka partier som tappade mest  
+- hur stora förändringarna var i procentenheter  
+- hur förändringarna varierade geografiskt  
+- hur stor spridningen var mellan partiernas utveckling  
+
+Analysen är en central del av projektets huvudfråga:  
+**Vad påverkar röstning i Sverige?**  
+Genom att först kartlägga *vilka partier som vann och förlorade* kan vi senare koppla dessa förändringar till socioekonomiska och geografiska faktorer.
+
+</div>
 `);
+
 
 
   // Fixa kommun name issue in lanKommun data
@@ -501,10 +515,6 @@ Eftersom analysen bygger på hela populationen av registrerade röster beskriver
 
   addMdToPage(`
 
-## Slutsats
-
-Analysen visar tydliga skillnader i hur partiernas röstandelar förändrades mellan riksdagsvalen 2018 och 2022.
-
 ### Största vinnare
 ${winners.map((p, i) =>
   `${i + 1}. **${p.parti}** — +${p.change.toFixed(2)} procentenheter`
@@ -515,6 +525,16 @@ ${losers.map((p, i) =>
   `${i + 1}. **${p.parti}** — ${p.change.toFixed(2)} procentenheter`
 ).join("  \n")}
 
+<div style="
+background:#F1F5F9;
+padding:30px;
+border-radius:16px;
+margin-top:20px;
+border-left:8px solid #192c4e;
+">
+
+## Slutsats
+
 Analysen visar att vissa partier stärkte sitt nationella väljarstöd samtidigt som andra tappade stöd mellan valen.
 
 Den statistiska spridningen visar dessutom att förändringarna inte var jämnt fördelade mellan partierna. Vissa partier uppvisade mycket större förändringar än genomsnittet, vilket tyder på tydliga omfördelningar i väljarnas partipreferenser.
@@ -522,7 +542,7 @@ Den statistiska spridningen visar dessutom att förändringarna inte var jämnt 
 Den geografiska analysen visar samtidigt att utvecklingen varierade mellan olika län. Ett parti kunde öka kraftigt i vissa delar av landet men samtidigt minska i andra, vilket tyder på regionala skillnader i väljarnas beteende och politiska utveckling.
 
 Eftersom analysen bygger på hela populationen av registrerade röster beskriver resultaten faktiska förändringar i valresultaten och inte statistiska uppskattningar från ett stickprov.
-
+</div>
 `);
-
+  
 }

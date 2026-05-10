@@ -9,27 +9,33 @@ if (!dbInfoOk) {
 
   // Introduktion
 
-  addMdToPage(`
-## Jämförelse av valresultat mellan 2018 och 2022
+addMdToPage(`
+# Partiförändringar (2018–2022)
 
-### Syfte
-Syftet med denna sida är att analysera hur stödet för ett valt riksdagsparti har förändrats mellan riksdagsvalen 2018 och 2022 på nationell nivå. Genom att studera partiets andel av rösterna över tid kan vi identifiera om stödet ökar, minskar eller förblir stabilt.
+<div style="
+background:#F1F5F9;
+padding:30px;
+border-radius:16px;
+margin-top:20px;
+border-left:8px solid #192c4e;
+">
 
-### Analysupplägg
-Analysen bygger på röster från **samtliga 290 kommuner** i Sverige. För varje parti beräknas:
+## Hur förändrades stödet för Sveriges riksdagspartier?
 
-- partiets nationella röstandel (%) för respektive valår  
-- förändring i procentenheter mellan 2018 och 2022  
-- kommunala förändringar i röstandel (%)  
-- genomsnittlig förändring mellan kommuner  
-- spridning i förändringar mellan kommuner  
+Denna sida analyserar hur partiernas röstandelar förändrades mellan riksdagsvalen 2018 och 2022.  
+Genom att studera utvecklingen på både nationell nivå och kommunnivå kan vi se:
 
-Dessa mått visualiseras i diagram som visar utvecklingen över tid samt variationer mellan kommuner.
+- vilka partier som ökade mest  
+- vilka partier som tappade stöd  
+- hur förändringarna varierade mellan kommuner  
+- hur stora skillnaderna var i förändring (spridning)
 
-### Kontext
-Även om denna sida inte direkt inkluderar socioekonomiska variabler, utgår analysen från en teoretisk ram där faktorer som **inkomstnivåer**, **arbetslöshet** och **lokala socioekonomiska skillnader** kan påverka röstningsmönster. Genom att först kartlägga hur stödet förändras över tid skapas en grund för vidare analys där dessa faktorer kan kopplas till förändringarna i partistöd.
+Analysen utgör ett centralt steg i projektets huvudfråga:  
+**Vad påverkar röstning i Sverige?**  
+Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa förändringar till socioekonomiska och geografiska faktorer.
+
+</div>
 `);
-
 
   // Dropdown för att välja parti
 
@@ -412,6 +418,13 @@ Standardavvikelsen visar hur mycket förändringarna varierar mellan kommuner. E
   // Slutsats
 
   addMdToPage(`
+<div style="
+background:#F1F5F9;
+padding:30px;
+border-radius:16px;
+margin-top:20px;
+border-left:8px solid #192c4e;
+">
 
 ## Slutsats
 
@@ -428,7 +441,7 @@ ${
 }
 
 Den kommunala analysen visar samtidigt att förändringen inte varit lika stor i hela landet. Vissa kommuner uppvisade betydligt större ökningar eller minskningar än andra, vilket framgår av standardavvikelsen och tabellerna över kommunala förändringar.
-
+</div>
 `);
 
 }
