@@ -2,15 +2,15 @@ import { lanKommun, electionResults } from "../helper/dataLoader.js";
 import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 
 if (!dbInfoOk) {
+
   displayDbNotOkText();
+
 } else {
 
-  // =====================================================
-  // 🎨 PROFESSIONAL BI DASHBOARD — REGIONAL POLITICAL SHIFT
-  // =====================================================
+  // Intro
 
   addMdToPage(`
-#  Regionala politiska skiften (2018–2022)
+# Regionala politiska skiften (2018–2022)
 
 <div style="
 background: linear-gradient(135deg,#1e3c72 0%, #192c4e 100%);
@@ -26,31 +26,30 @@ box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 Denna analys visar hur Sveriges län förändrades mellan riksdagsvalen
 2018 och 2022 genom att analysera utvecklingen för:
 
--  Högerblocket
--  Vänsterblocket
--  Regionala vinnare
--  Regionala förlorare
+- Högerblocket
+- Vänsterblocket
+- Regionala vinnare
+- Regionala förlorare
 
-Analysen bygger på samtliga kommuner i Sverige och visualiserar
-hur den politiska balansen förändrades geografiskt.
+Analysen bygger på samtliga kommuner i Sverige och använder
+röstandelar (%) istället för absoluta röster för att möjliggöra
+rättvisa jämförelser mellan län med olika befolkningsstorlek.
 
 </div>
   `);
 
-  // =====================================================
-  // 🧹 DATA CLEANING
-  // =====================================================
+  // Fixa kommun name issue in lanKommun data
 
   function normalizeKommun(name) {
+
     return (name || "")
       .trim()
       .toLowerCase()
       .replace("strängns", "strängnäs");
+
   }
 
-  // =====================================================
-  // 🗺️ JOIN KOMMUN → LÄN
-  // =====================================================
+  // KOMMUN → LÄN
 
   const kommunToLan = new Map(
     lanKommun.map(r => [
@@ -59,21 +58,15 @@ hur den politiska balansen förändrades geografiskt.
     ])
   );
 
-  // =====================================================
-  // 🎨 COLORS
-  // =====================================================
+  // Färger för blocken
 
   const colors = {
-    hoger: "#1D4ED8",
+    hoger: "#2563EB",
     vanster: "#DC2626",
-    positive: "#16A34A",
-    negative: "#DC2626",
     neutral: "#6B7280"
   };
 
-  // =====================================================
-  // 🧠 BLOCK DEFINITIONS
-  // =====================================================
+  // Politiska block
 
   const hogerBlock = [
     "Moderaterna",
@@ -84,91 +77,172 @@ hur den politiska balansen förändrades geografiskt.
 
   const vansterBlock = [
     "Socialdemokraterna",
+    "Arbetarepartiet-Socialdemokraterna",
     "Vänsterpartiet",
     "Miljöpartiet",
-    "Centerpartiet",
-    "Arbetarepartiet-Socialdemokraterna"
+    "Centerpartiet"
   ];
 
-  // =====================================================
-  // 📊 AGGREGATE PER LÄN
-  // =====================================================
+  // Aggregera röster per län och block
 
   const lanStats = new Map();
 
   electionResults.forEach(row => {
 
-    const kommun = normalizeKommun(row.kommun);
-    const lan = kommunToLan.get(kommun);
+    const kommun =
+      normalizeKommun(row.kommun);
+
+    const lan =
+      kommunToLan.get(kommun);
 
     if (!lan) return;
 
     if (!lanStats.has(lan)) {
+
       lanStats.set(lan, {
+
+        total2018: 0,
+        total2022: 0,
+
         hoger2018: 0,
         hoger2022: 0,
+
         vanster2018: 0,
         vanster2022: 0
+
       });
+
     }
 
-    const stats = lanStats.get(lan);
+    const stats =
+      lanStats.get(lan);
 
-    const v2018 = Number(row.roster2018 || 0);
-    const v2022 = Number(row.roster2022 || 0);
+    const votes2018 =
+      Number(row.roster2018 || 0);
+
+    const votes2022 =
+      Number(row.roster2022 || 0);
+
+    // Totala röster
+
+    stats.total2018 += votes2018;
+    stats.total2022 += votes2022;
+
+    // Högerblock
 
     if (hogerBlock.includes(row.parti)) {
-      stats.hoger2018 += v2018;
-      stats.hoger2022 += v2022;
+
+      stats.hoger2018 += votes2018;
+      stats.hoger2022 += votes2022;
+
     }
+
+    // Vänsterblock
 
     if (vansterBlock.includes(row.parti)) {
-      stats.vanster2018 += v2018;
-      stats.vanster2022 += v2022;
+
+      stats.vanster2018 += votes2018;
+      stats.vanster2022 += votes2022;
+
     }
+
   });
 
-  // =====================================================
-  // 📈 CALCULATE POLITICAL SHIFT
-  // =====================================================
+  // Beräkna förändringar och nettoförändring per län
 
   const regionalShift = [];
 
   lanStats.forEach((stats, lan) => {
 
+    const hogerShare2018 =
+      (stats.hoger2018 / stats.total2018) * 100;
+
+    const hogerShare2022 =
+      (stats.hoger2022 / stats.total2022) * 100;
+
+    const vansterShare2018 =
+      (stats.vanster2018 / stats.total2018) * 100;
+
+    const vansterShare2022 =
+      (stats.vanster2022 / stats.total2022) * 100;
+
     const hogerDiff =
-      stats.hoger2022 - stats.hoger2018;
+      hogerShare2022 - hogerShare2018;
 
     const vansterDiff =
-      stats.vanster2022 - stats.vanster2018;
+      vansterShare2022 - vansterShare2018;
 
-    const netShift = hogerDiff - vansterDiff;
+    const netShift =
+      hogerDiff - vansterDiff;
 
     regionalShift.push({
+
       lan,
+
+      hogerShare2018,
+      hogerShare2022,
+
+      vansterShare2018,
+      vansterShare2022,
+
       hogerDiff,
       vansterDiff,
+
       netShift
+
     });
+
   });
 
+  // Statistiska funktioner
+
+  function mean(arr) {
+
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
+
+  }
+
+  function standardDeviation(arr) {
+
+    const m = mean(arr);
+
+    const variance =
+      mean(arr.map(v => (v - m) ** 2));
+
+    return Math.sqrt(variance);
+
+  }
+
+  // Sortera län efter nettoförändring
+
   regionalShift.sort((a, b) =>
-    Math.abs(b.netShift) - Math.abs(a.netShift)
+    b.netShift - a.netShift
   );
 
-  // =====================================================
-  // 🏆 INSIGHT CARDS
-  // =====================================================
+  // Statistisk sammanfattning av nettoförändringar
+  const allShifts =
+    regionalShift.map(r => r.netShift);
+
+  const meanShift =
+    mean(allShifts);
+
+  const stdShift =
+    standardDeviation(allShifts);
+
+  const maxShift =
+    Math.max(...allShifts);
+
+  const minShift =
+    Math.min(...allShifts);
+
+  // Visa län med starkast skifte mot höger respektive vänster
 
   const strongestRight =
-    regionalShift.reduce((a, b) =>
-      a.netShift > b.netShift ? a : b
-    );
+    regionalShift[0];
 
   const strongestLeft =
-    regionalShift.reduce((a, b) =>
-      a.netShift < b.netShift ? a : b
-    );
+    [...regionalShift]
+      .sort((a, b) => a.netShift - b.netShift)[0];
 
   addMdToPage(`
 <div style="
@@ -185,13 +259,17 @@ border-radius:16px;
 color:white;
 box-shadow:0 4px 15px rgba(0,0,0,0.15);
 ">
-<h3> Starkast högerskifte</h3>
+
+<h3>Starkast högerskifte</h3>
+
 <p style="font-size:26px;font-weight:bold;">
 ${strongestRight.lan}
 </p>
+
 <p>
-+${strongestRight.netShift.toLocaleString("sv-SE")} röster
++${strongestRight.netShift.toFixed(2)} procentenheter
 </p>
+
 </div>
 
 <div style="
@@ -201,24 +279,26 @@ border-radius:16px;
 color:white;
 box-shadow:0 4px 15px rgba(0,0,0,0.15);
 ">
-<h3> Starkast vänsterskifte</h3>
+
+<h3>Starkast vänsterskifte</h3>
+
 <p style="font-size:26px;font-weight:bold;">
 ${strongestLeft.lan}
 </p>
+
 <p>
-${strongestLeft.netShift.toLocaleString("sv-SE")} röster
+${strongestLeft.netShift.toFixed(2)} procentenheter
 </p>
+
 </div>
 
 </div>
   `);
 
-  // =====================================================
-  // 📊 MAIN CHART
-  // =====================================================
+  // Chart över nettoförändring per län
 
   addMdToPage(`
-##  Regionala politiska skiften per län
+## Regionala politiska skiften per län
   `);
 
   const chartData = [
@@ -228,82 +308,146 @@ ${strongestLeft.netShift.toLocaleString("sv-SE")} röster
   regionalShift.forEach(r => {
 
     chartData.push([
+
       r.lan,
+
       r.netShift,
-      `color: ${
+
+      `color:${
         r.netShift >= 0
           ? colors.hoger
           : colors.vanster
       }`
+
     ]);
+
   });
 
   drawGoogleChart({
+
     type: "ColumnChart",
+
     data: chartData,
+
     options: {
+
       title:
-        "Politiskt skifte per län (höger ↔ vänster)",
+        "Nettoförändring mellan höger- och vänsterblock per län",
+
       height: 650,
       width: 1200,
+
       legend: "none",
+
       backgroundColor: "#ffffff",
+
+      chartArea: {
+        left: 90,
+        right: 30,
+        top: 80,
+        bottom: 120
+      },
+
       animation: {
         startup: true,
         duration: 1200,
         easing: "out"
       },
-      chartArea: {
-        left: 80,
-        right: 30,
-        top: 80,
-        bottom: 120
-      },
+
       hAxis: {
         title: "Län",
         slantedText: true,
         slantedTextAngle: 45
       },
+
       vAxis: {
-        title: "Nettoförändring i röster"
+        title: "Förändring i procentenheter"
       }
+
     }
+
   });
 
-  // =====================================================
-  // 📋 TABLE
-  // =====================================================
+  // Tabell med detaljerad regional statistik
 
-addMdToPage(`
+  addMdToPage(`
 ## Regional statistik
 `);
 
-const tableData = regionalShift.map(r => ({
-  "Län": r.lan,
-  "Högerförändring": r.hogerDiff,
-  "Vänsterförändring": r.vansterDiff,
-  "Netto": r.netShift,
-  "Trend": r.netShift > 0 ? "Höger" : r.netShift < 0 ? "Vänster" : "Neutral"
-}));
+  const tableData =
+    regionalShift.map(r => ({
 
-tableFromData({
-  data: tableData,
-  columnNames: [
-    "Län",
-    "Högerförändring",
-    "Vänsterförändring",
-    "Netto",
-    "Trend"
-  ],
-  fixedHeader: true
-});
+      "Län":
+        r.lan,
 
-  
-  // =====================================================
-  // 🧠 ANALYSIS
-  // =====================================================
+      "Höger 2018 (%)":
+        r.hogerShare2018.toFixed(2),
 
-addMdToPage(`
+      "Höger 2022 (%)":
+        r.hogerShare2022.toFixed(2),
+
+      "Vänster 2018 (%)":
+        r.vansterShare2018.toFixed(2),
+
+      "Vänster 2022 (%)":
+        r.vansterShare2022.toFixed(2),
+
+      "Nettoförändring":
+        r.netShift.toFixed(2),
+
+      "Trend":
+        r.netShift > 0
+          ? "Höger"
+          : r.netShift < 0
+            ? "Vänster"
+            : "Neutral"
+
+    }));
+
+  tableFromData({
+
+    data: tableData,
+
+    columnNames: [
+
+      "Län",
+      "Höger 2018 (%)",
+      "Höger 2022 (%)",
+      "Vänster 2018 (%)",
+      "Vänster 2022 (%)",
+      "Nettoförändring",
+      "Trend"
+
+    ],
+
+    fixedHeader: true
+
+  });
+
+  // Statistisk sammanfattning av nettoförändringar
+
+  addMdToPage(`
+
+## Statistisk sammanfattning
+
+- **Genomsnittlig nettoförändring mellan län:** ${meanShift.toFixed(2)} procentenheter
+- **Standardavvikelse:** ${stdShift.toFixed(2)}
+- **Största högerskifte:** ${maxShift.toFixed(2)} procentenheter
+- **Största vänsterskifte:** ${minShift.toFixed(2)} procentenheter
+
+### Tolkning
+
+- Genomsnittet visar den övergripande förändringen mellan Sveriges län.
+- Standardavvikelsen visar hur mycket länens politiska förändringar varierade.
+- Ett högre värde innebär större regionala skillnader mellan länen.
+- Max- och minvärden visar de mest extrema politiska skiftena i landet.
+
+`);
+
+  // Analys av regionala politiska skiften
+
+  addMdToPage(`
+
 <div style="
 background:#F8FAFC;
 padding:30px;
@@ -314,13 +458,23 @@ border-left:8px solid #2563EB;
 
 ## Statistisk tolkning
 
-Analysen visar tydliga geografiska skillnader i hur väljare förändrade
-sina politiska preferenser mellan 2018 och 2022.
+Analysen visar tydliga geografiska skillnader i hur väljarnas politiska
+preferenser förändrades mellan riksdagsvalen 2018 och 2022.
+
+Vissa län uppvisade tydliga rörelser mot högerblocket medan andra län
+utvecklades i riktning mot vänsterblocket.
+
+Eftersom analysen använder röstandelar (%) istället för absoluta röster
+kan resultaten jämföras rättvist mellan län med olika befolkningsstorlek.
 
 </div>
+
 `);
 
-addMdToPage(`
+  // Viktiga observationer
+
+  addMdToPage(`
+
 <div style="
 background:#F1F5F9;
 padding:30px;
@@ -331,54 +485,41 @@ border-left:8px solid #0EA5E9;
 
 ## Viktiga observationer
 
-- Län med positiva värden har rört sig mot högerblocket  
-- Län med negativa värden har rört sig mot vänsterblocket  
-- Förändringarna varierar kraftigt mellan olika delar av Sverige  
-- Regionala socioekonomiska faktorer kan förklara delar av utvecklingen
+- Positiva värden innebär ett starkare stöd för högerblocket.
+- Negativa värden innebär ett starkare stöd för vänsterblocket.
+- Förändringarna varierade tydligt mellan Sveriges län.
+- Resultaten tyder på regionala skillnader i väljarnas politiska beteende.
+- Skillnaderna kan delvis påverkas av socioekonomiska faktorer,
+  urbanisering och lokala arbetsmarknadsförhållanden.
 
 </div>
+
 `);
 
-addMdToPage(`
-<div style="
-background:#FFF7ED;
-padding:30px;
-border-radius:16px;
-margin-top:20px;
-border-left:8px solid #16b1f9;
-">
+  // Slutsats
 
-## Möjliga förklaringar
+  addMdToPage(`
 
-<table style="width:100%; border-collapse:collapse; margin-top:10px;">
-  <thead>
-    <tr style="background:#f3f4f6; text-align:left;">
-      <th style="padding:10px; border-bottom:2px solid #e5e7eb;">Faktor</th>
-      <th style="padding:10px; border-bottom:2px solid #e5e7eb;">Möjlig påverkan</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="padding:10px; border-bottom:1px solid #e5e7eb;">Urbanisering</td>
-      <td style="padding:10px; border-bottom:1px solid #e5e7eb;">Städer röstar annorlunda än landsbygd</td>
-    </tr>
-    <tr>
-      <td style="padding:10px; border-bottom:1px solid #e5e7eb;">Inkomst</td>
-      <td style="padding:10px; border-bottom:1px solid #e5e7eb;">Ekonomiska skillnader påverkar partival</td>
-    </tr>
-    <tr>
-      <td style="padding:10px; border-bottom:1px solid #e5e7eb;">Migration</td>
-      <td style="padding:10px; border-bottom:1px solid #e5e7eb;">Demografiska förändringar påverkar opinion</td>
-    </tr>
-    <tr>
-      <td style="padding:10px;">Arbetsmarknad</td>
-      <td style="padding:10px;">Lokala jobbfrågor kan förändra väljarmönster</td>
-    </tr>
-  </tbody>
-</table>
+## Slutsats
 
-</div>
+Analysen visar att Sveriges politiska utveckling mellan riksdagsvalen
+2018 och 2022 inte var geografiskt jämnt fördelad.
+
+Flera län uppvisade tydliga rörelser mot högerblocket medan andra län
+visade ökningar för vänsterblocket. Resultaten visar därmed att det
+finns betydande regional variation i väljarnas politiska förändringar.
+
+Genom att analysera röstandelar istället för absoluta röster blir
+jämförelserna statistiskt mer rättvisa mellan stora och små län.
+
+Den statistiska spridningen mellan länen visar dessutom att vissa delar
+av landet förändrades betydligt mer än andra, vilket tyder på att lokala
+och regionala faktorer kan ha haft stor påverkan på valresultaten.
+
+Eftersom analysen bygger på hela populationen av registrerade röster
+beskriver resultaten faktiska förändringar i valutfallet och inte
+statistiska uppskattningar från ett stickprov.
+
 `);
-
 
 }
