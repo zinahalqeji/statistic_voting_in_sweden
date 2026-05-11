@@ -70,6 +70,20 @@ https://www.scb.se/en/finding-statistics/regional-statistics/regional-divisions/
 
 ---
 
+## 4. SCB – Arbetslöshet (AKU) 2018–2022
+**Källa:** Statistiska centralbyrån  
+**Dataset:** Arbetslöshet (AKU) efter region, kön, ålder och tid  
+**URL:**  
+https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__AM__AM0401__AM0401L/NAKUArblosaTAr/
+
+**Användning i projektet:**  
+- Arbetslöshet (%) per kommun  
+- Köns- och åldersspecifika jämförelser  
+- Socioekonomiska analyser kopplade till valresultat  
+- Tidsserieanalys 2018–2022
+
+---
+
 # Databearbetning
 
 För att möjliggöra jämförbara analyser har följande steg genomförts:
