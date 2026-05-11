@@ -296,7 +296,7 @@ Den nationella analysen visar hur väljarnas stöd fördelades mellan Sveriges r
  
 Resultaten visar att vissa partier stärkte sina nationella röstandelar medan andra tappade stöd. Blockanalysen visar hur balansen mellan vänster- och högerblocket förändrades mellan valåren.
  
-Denna sida fungerar som en övergripande introduktion till projektets senare analyser av regionala skillnader, socioekonomiska faktorer och politiska förändringar.
+Denna sida fungerar som en övergripande introduktion till projektets senare analyser av regionala skillnader,socioekonomiska faktorer och politiska förändringar.
  
 </div>
   `);
