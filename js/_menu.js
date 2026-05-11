@@ -4,8 +4,8 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
 
   { name: 'Valöversikt', sub: [
       { name: 'Nationella valresultat', script: 'valoversikt/overview-elections.js' },
-      { name: 'Röstandelar per parti', script: 'valoversikt/party-shares.js' },
-      { name: 'Jämförelse mellan partier', script: 'valoversikt/party-comparison.js' }
+      { name: 'Totala röster per kommun', script: 'valoversikt/total-votes.js' },
+      { name: 'Vem röstar? (översikt)', script: 'valoversikt/who-votes.js' }
   ]},
 
   { name: 'Ekonomiska faktorer', sub: [
