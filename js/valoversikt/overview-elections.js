@@ -190,15 +190,15 @@ ${(total2022 - total2018).toLocaleString("sv-SE")}
     "Moderaterna",
     "Kristdemokraterna",
     "Liberalerna",
-    "Sverigedemokraterna"
+    "Sverigedemokraterna",
+    "Centerpartiet"
   ];
  
   const leftBlock = [
     "Socialdemokraterna",
     "Arbetarepartiet-Socialdemokraterna",
     "Vänsterpartiet",
-    "Miljöpartiet",
-    "Centerpartiet"
+    "Miljöpartiet"
   ];
  
   let right2018 = 0;

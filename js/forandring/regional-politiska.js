@@ -71,15 +71,15 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
     "Moderaterna",
     "Kristdemokraterna",
     "Liberalerna",
-    "Sverigedemokraterna"
+    "Sverigedemokraterna",
+    "Centerpartiet"
   ];
 
   const vansterBlock = [
     "Socialdemokraterna",
     "Arbetarepartiet-Socialdemokraterna",
     "Vänsterpartiet",
-    "Miljöpartiet",
-    "Centerpartiet"
+    "Miljöpartiet"
   ];
 
   // Aggregera röster per län och block
