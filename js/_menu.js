@@ -3,9 +3,9 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
   { name: 'Introduktion', script: 'intro.js' },
 
   { name: 'Valöversikt', sub: [
-      { name: 'Valresultat 2018 vs 2022', script: 'valoversikt/overview-elections.js' },
-      { name: 'Jämförelse mellan partier', script: 'valoversikt/party-comparison.js' },
-      { name: 'Största förändringar', script: 'valoversikt/party-change.js' }
+      { name: 'Nationella valresultat', script: 'valoversikt/overview-elections.js' },
+      { name: 'Röstandelar per parti', script: 'valoversikt/party-shares.js' },
+      { name: 'Jämförelse mellan partier', script: 'valoversikt/party-comparison.js' }
   ]},
 
   { name: 'Ekonomiska faktorer', sub: [
@@ -35,7 +35,8 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
   { name: 'Förändring 2018–2022', sub: [
       { name: 'Partiförändringar', script: 'forandring/partyChange.js' },
       { name: 'Största vinnare & förlorare', script: 'forandring/top-changes.js' },
-      { name: 'Regionala förändringar', script: 'forandring/regional-change.js' }
+      { name: 'Regionala politiska skiften', script: 'forandring/regional-politiska.js' },
+      { name: 'Regionala drivkrafter', script: 'forandring/regional-drivkrafter.js' }
 ]}, 
 
   { name: 'källor', script: 'sources.js' },
