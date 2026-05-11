@@ -29,6 +29,8 @@ statistiska analyser av valresultat, socioekonomiska faktorer och regionala skil
 **URL:**  
 https://www.val.se/valresultat-och-statistik/statistik-och-data/analyser-och-jamforelser  
 
+https://resultat.val.se/val2022/RD?r=S
+
 **Användning i projektet:**  
 - Röster per parti och kommun  
 - Nationella röstandelar  
