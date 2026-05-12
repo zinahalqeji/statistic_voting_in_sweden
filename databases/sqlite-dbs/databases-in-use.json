@@ -4,26 +4,6 @@
     "type": "sqlite",
     "file": "counties.sqlite3"
   },
-   {
-    "name": "undersokning_2018",
-    "type": "sqlite",
-    "file": "undersokning_2018.db"
-  },
-  {
-    "name": "undersokning_2022",
-    "type": "sqlite",
-    "file": "undersokning_2022.db"
-  },
-  {
-    "name": "valresultat",
-    "type": "sqlite",
-    "file": "valresultat.db"
-  },
-  {
-    "name": "education-sqlite",
-    "type": "sqlite",
-    "file": "education.sqlite3"
-  },
   {
     "name": "geo-mysql",
     "type": "mysql",
@@ -39,7 +19,7 @@
     "name": "kommun-info-mongodb",
     "type": "mongodb",
     "credentials": {
-      "connectionString": "mongodb+srv://readuser:V9Yue8P6N7qCf@personsandaddresses.jux6vnk.mongodb.net/?retryWrites=true&w=majority&appName=PersonsAndAddresses",
+      "connectionString": "mongodb://readuser:V9Yue8P6N7qCf@ac-efoqgwq-shard-00-00.jux6vnk.mongodb.net:27017,ac-efoqgwq-shard-00-01.jux6vnk.mongodb.net:27017,ac-efoqgwq-shard-00-02.jux6vnk.mongodb.net:27017/?ssl=true&authSource=admin&retryWrites=true&w=majority&appName=PersonsAndAddresses",
       "database": "kommun-info"
     }
   },
