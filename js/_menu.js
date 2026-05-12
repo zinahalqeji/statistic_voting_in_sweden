@@ -9,7 +9,7 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
   ]},
 
   { name: 'Ekonomiska faktorer', sub: [
-      { name: 'Inkomst (översikt)', script: 'ekonomiska/incomes.js' },
+      { name: 'Inkomst (översikt)', script: 'ekonomiska/income.js' },
       { name: 'Inkomst vs röstning', script: 'ekonomiska/income-voting.js' },
       { name: 'Hög vs låg inkomst', script: 'ekonomiska/income-groups.js' },
       { name: 'Arbetslöshet', script: 'ekonomiska/arbetslos.js' },
