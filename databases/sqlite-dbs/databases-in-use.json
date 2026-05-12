@@ -15,6 +15,12 @@
       "database": "dm24"
     }
   },
+
+   {
+    "name": "education-sqlite",
+    "type": "sqlite",
+    "file": "education.sqlite3"
+  },
   {
     "name": "kommun-info-mongodb",
     "type": "mongodb",
@@ -35,3 +41,4 @@
     }
   }
 ]
+
