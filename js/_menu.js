@@ -3,13 +3,13 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
   { name: 'Introduktion', script: 'intro.js' },
 
   { name: 'Valöversikt', sub: [
-      { name: 'Valresultat 2018 vs 2022', script: 'valoversikt/overview-elections.js' },
-      { name: 'Jämförelse mellan partier', script: 'valoversikt/party-comparison.js' },
-      { name: 'Största förändringar', script: 'valoversikt/party-change.js' }
+      { name: 'Nationella valresultat', script: 'valoversikt/overview-elections.js' },
+      { name: 'Totala röster per kommun', script: 'valoversikt/total-votes.js' },
+      { name: 'Vem röstar? (översikt)', script: 'valoversikt/who-votes.js' }
   ]},
 
   { name: 'Ekonomiska faktorer', sub: [
-      { name: 'Inkomst (översikt)', script: 'ekonomiska/income.js' },
+      { name: 'Inkomst (översikt)', script: 'ekonomiska/incomes.js' },
       { name: 'Inkomst vs röstning', script: 'ekonomiska/income-voting.js' },
       { name: 'Hög vs låg inkomst', script: 'ekonomiska/income-groups.js' },
       { name: 'Arbetslöshet', script: 'ekonomiska/arbetslos.js' },
@@ -33,9 +33,10 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
   ]},
 
   { name: 'Förändring 2018–2022', sub: [
-      { name: 'Partiförändringar', script: 'forandring/party-change.js' },
+      { name: 'Partiförändringar', script: 'forandring/partyChange.js' },
       { name: 'Största vinnare & förlorare', script: 'forandring/top-changes.js' },
-      { name: 'Regionala förändringar', script: 'forandring/regional-change.js' }
+      { name: 'Regionala politiska skiften', script: 'forandring/regional-politiska.js' },
+      { name: 'Regionala drivkrafter', script: 'forandring/regional-drivkrafter.js' }
 ]}, 
 
   { name: 'källor', script: 'sources.js' },

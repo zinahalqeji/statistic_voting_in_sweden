@@ -1,143 +1,141 @@
-addMdToPage(`# Källor / Sources`);
-
 addMdToPage(`
-Denna sida sammanställer alla datakällor som används i projektet.  
-Syftet är att ge full transparens kring var informationen kommer ifrån, hur den har bearbetats och vilka metoder som använts i analysen.
-`);
+# Källor / Sources
+
+<div style="
+background:#F1F5F9;
+padding:30px;
+border-radius:16px;
+margin-top:20px;
+border-left:8px solid #192c4e;
+">
+
+## Datakällor för projektet
+
+Detta projekt bygger på officiella och öppet tillgängliga datakällor från  
+**Valmyndigheten** och **Statistiska centralbyrån (SCB)**.  
+Alla dataset har bearbetats, normaliserats och integrerats för att möjliggöra  
+statistiska analyser av valresultat, socioekonomiska faktorer och regionala skillnader.
+
+</div>
 
 
-// =========================
-// 1. VALDATA (NEO4J)
-// =========================
+---
 
-addMdToPage(`
-## 1. Valdata (Neo4j – riksdagsval-neo4j)
+# Primära datakällor
 
-**Databas:** \`riksdagsval-neo4j\`  
-**Nodtyp:** \`Partiresultat\`  
+## 1. Valmyndigheten – Riksdagsval 2018 & 2022
+**Källa:** Valmyndigheten  
+**Dataset:** Officiella valresultat per kommun och parti  
+**URL:**  
+https://www.val.se/valresultat-och-statistik/statistik-och-data/analyser-och-jamforelser  
 
-**Innehåll:**  
+https://resultat.val.se/val2022/RD?r=S
+
+**Användning i projektet:**  
 - Röster per parti och kommun  
-- Valår: 2018 och 2022  
-
-**Använda fält:**  
-- \`kommun\`  
-- \`parti\`  
-- \`roster2018\`  
-- \`roster2022\`  
-
-**Syfte:**  
-Att jämföra valresultat mellan 2018 och 2022 samt identifiera förändringar i partistöd.
-`);
+- Nationella röstandelar  
+- Partiförändringar 2018–2022  
+- Blockanalys (vänster/höger)  
+- Vinnare & förlorare  
+- Regionala politiska skiften  
 
 
-// =========================
-// 2. INKOMSTDATA (MONGODB)
-// =========================
+---
 
-addMdToPage(`
-## 2. Inkomstdata (MongoDB – kommun-info-mongodb)
+## 2. SCB – Utbildningsnivå i Sverige
+**Källa:** Statistiska centralbyrån  
+**Dataset:** Utbildningsnivå per kommun  
+**URL:**  
+https://www.scb.se/hitta-statistik/sverige-i-siffror/utbildning-jobb-och-pengar/utbildningsnivan-i-sverige/  
 
-**Collection:** \`incomeByKommun\`  
-
-**Innehåll:**  
-- Medelinkomst per kommun (2018)  
-- Medianinkomst per kommun (2022)  
-- Könsuppdelning (vi använder \`totalt\`)  
-
-**Använda fält:**  
-- \`kommun\`  
-- \`kon\`  
-- \`medelInkomst2018\`  
-- \`medianInkomst2022\`  
-
-**Syfte:**  
-Att undersöka sambandet mellan inkomstnivåer och partistöd i valet 2022.
-`);
+**Användning i projektet:**  
+- Socioekonomiska analyser  
+- Korrelation mellan utbildningsnivå och politiska skiften  
+- Regionala drivkrafter  
 
 
-// =========================
-// 3. ARBETSLÖSHET (SQLITE)
-// =========================
+---
 
-addMdToPage(`
-## 3. Arbetslöshetsdata (SQLite)
+## 3. SCB – Kommuner och län (LAU2)
+**Källa:** Statistiska centralbyrån  
+**Dataset:** Kommun–län‑mappning  
+**URL:**  
+https://www.scb.se/en/finding-statistics/regional-statistics/regional-divisions/counties-and-municipalities/counties-and-municipalities-in-numerical-order/  
 
-**Fil:** \`arbetsloshet_nya.db\`  
-
-**Innehåll:**  
-- Arbetslöshetsnivåer per kommun  
-
-**Syfte:**  
-Att jämföra partistöd i kommuner med hög respektive låg arbetslöshet.
-`);
+**Användning i projektet:**  
+- Koppling mellan kommun och län  
+- Regionala analyser  
+- Länsvisa politiska skiften  
 
 
-// =========================
-// 4. KOMMUNINFORMATION (SQLITE)
-// =========================
+---
 
-addMdToPage(`
-## 4. Kommuninformation (SQLite)
+## 4. SCB – Arbetslöshet (AKU) 2018–2022
+**Källa:** Statistiska centralbyrån  
+**Dataset:** Arbetslöshet (AKU) efter region, kön, ålder och tid  
+**URL:**  
+https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__AM__AM0401__AM0401L/NAKUArblosaTAr/
 
-**Filer:**  
-- \`kommuner.db\`  
-- \`counties.sqlite3\`  
+**Användning i projektet:**  
+- Arbetslöshet (%) per kommun  
+- Köns- och åldersspecifika jämförelser  
+- Socioekonomiska analyser kopplade till valresultat  
+- Tidsserieanalys 2018–2022
 
-**Innehåll:**  
-- Kommunnamn  
-- Länstillhörighet  
-- Geografiska attribut  
+---
 
-**Syfte:**  
-Att möjliggöra matchning, filtrering och gruppering av kommuner i analysen.
-`);
+# Databearbetning
 
+För att möjliggöra jämförbara analyser har följande steg genomförts:
 
-// =========================
-// 5. DATABEARBETNING
-// =========================
-
-addMdToPage(`
-## 5. Databearbetning
-
-Följande steg har genomförts innan analys och visualisering:
-
-- **Filtrering:** Endast 20 utvalda kommuner och 3 partier (S, M, SD) inkluderades.  
-- **Gruppering:** Valresultat grupperades per kommun.  
-- **Beräkningar:** Röstandelar, procent, medelvärden, medianer och totalsummor.  
-- **Normalitetsbedömning:** Jämförelse mellan medelvärde och median.  
-- **Korrelation:** Pearson r mellan inkomst och röstandel.  
-- **Visualisering:** BarChart och BubbleChart för att visa mönster och skillnader.
-`);
+- Normalisering av kommunnamn (t.ex. *"Strängns" → "Strängnäs"*)  
+- Aggregering av röster per parti och kommun  
+- Beräkning av röstandelar (%)  
+- Beräkning av förändringar i procentenheter  
+- Blockindelning (vänster/höger)  
+- Sammanfogning av SCB‑data med valresultat  
+- Normalisering av socioekonomiska variabler  
+- Korrelationer mellan socioekonomi och politiska skiften  
 
 
-// =========================
-// 6. METODER
-// =========================
+---
 
-addMdToPage(`
-## 6. Metoder
+# Statistiska metoder
 
-Analysen bygger på följande statistiska och analytiska metoder:
+Projektet använder följande metoder:
 
-- **Deskriptiv statistik:** medelvärde, median, min, max  
-- **Korrelation:** Pearson r  
-- **Jämförelse mellan år:** 2018 vs 2022  
-- **Visualisering:** BarChart, BubbleChart  
-- **Kategorisering:** Hög vs låg arbetslöshet, vänster vs höger block
-`);
+- Deskriptiv statistik (medel, median, standardavvikelse)  
+- Förändringsanalys (2018–2022)  
+- Korrelation (Pearson r)  
+- Rangordning (Top 10 / Bottom 10)  
+- Visualiseringar: stapeldiagram, linjediagram, bubbeldiagram  
+- Regional analys på läns- och kommunnivå  
 
 
-// =========================
-// 7. REFERENSER
-// =========================
+---
 
-addMdToPage(`
-## 7. Referenser
+# Referenser
 
-- Statistiska centralbyrån (SCB)  
-- Valmyndigheten  
-- Kommunala databaser (Neo4j, MongoDB, SQLite)  
-- Intern databehandling inom projektet
+- Valmyndigheten – Officiella valresultat  
+- Statistiska centralbyrån (SCB) – Inkomst, utbildning, befolkning, tätorter  
+- SCB – Kommuner och län (LAU2)  
+- Sveriges kommuner och regioner (SKR) – Kommunindelning  
+
+---
+
+<div style="
+background:#F8FAFC;
+padding:25px;
+border-radius:16px;
+margin-top:30px;
+border-left:8px solid #192c4e;
+">
+
+## Sammanfattning
+
+Källorna ovan utgör grunden för projektets statistiska analyser.  
+Alla dataset kommer från officiella myndigheter och är öppet tillgängliga.  
+Bearbetningen har utförts med fokus på transparens, reproducerbarhet och akademisk kvalitet.
+
+</div>
 `);
