@@ -105,21 +105,21 @@ gap:20px;
 margin:30px 0;
 ">
  
-<div style="background:#2563EB;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
 <h3>Totala röster 2018</h3>
 <p style="font-size:30px;font-weight:bold;">
 ${total2018.toLocaleString("sv-SE")}
 </p>
 </div>
  
-<div style="background:#7C3AED;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
 <h3>Totala röster 2022</h3>
 <p style="font-size:30px;font-weight:bold;">
 ${total2022.toLocaleString("sv-SE")}
 </p>
 </div>
  
-<div style="background:#059669;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
 <h3>Förändring i antal röster</h3>
 <p style="font-size:30px;font-weight:bold;">
 ${(total2022 - total2018).toLocaleString("sv-SE")}
