@@ -603,7 +603,7 @@ För urvalet **${chosenGender}**, **${chosenCounty}**, **${chosenYear}** visar a
 
 Resultatet kan tyda på att ekonomiska skillnader mellan kommuner hänger ihop med politiska röstningsmönster. Kommuner med olika inkomstnivåer kan ha olika prioriteringar, exempelvis kring välfärd, skatter, arbetsmarknad, boende och trygghet.
 
-Samtidigt går det inte att säga att inkomsten ensam förklarar hur människor röstar. Röstningsmönster påverkas ofta av flera faktorer samtidigt, till exempel utbildningsnivå, ålder, migration, arbetslöshet, geografisk plats och lokala samhällsfrågor.
+Samtidigt går det inte att säga att inkomsten *orsakar* hur människor röstar — även om ett samband finns. Kausalitet är svårt att bevisa eftersom många faktorer samverkar. Till exempel kan utbildningsnivå påverka både inkomst och röstningsbeteende samtidigt, vilket gör det oklart vad som egentligen driver vad. Röstningsmönster formas dessutom över tid och påverkas av lokala samhällsfrågor, historik och kultur — faktorer som inte syns i inkomststatistiken.
 
 ## Metod och begränsning
 

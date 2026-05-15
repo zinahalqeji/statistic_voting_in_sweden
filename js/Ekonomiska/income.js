@@ -7,7 +7,6 @@ import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 // =====================================================
 
 // Normaliserar text så att kommun- och länsnamn blir lättare att jämföra.
-// Exempel: "Stockholms län" och "stockholms lan" kan matchas enklare.
 function normalize(value) {
   return String(value || "")
     .toLowerCase()
@@ -17,7 +16,6 @@ function normalize(value) {
 }
 
 // Standardiserar könsvärden från datan.
-// Det gör att dropdownen kan filtrera på totalt, kvinnor och män även om datan skrivs på olika sätt.
 function normalizeGender(value) {
   const v = normalize(value);
 
@@ -28,7 +26,6 @@ function normalizeGender(value) {
 }
 
 // Gör om värden till tal.
-// Används eftersom vissa siffror kan komma som text eller innehålla kommatecken.
 function toNumber(value) {
   if (value === null || value === undefined || value === "") return null;
 
@@ -42,7 +39,6 @@ function toNumber(value) {
 }
 
 // Räknar ut genomsnittet av en lista med tal.
-// Tomma eller ogiltiga värden tas bort innan beräkningen.
 function average(values) {
   const nums = values.filter(v =>
     v !== null &&
@@ -56,13 +52,11 @@ function average(values) {
 }
 
 // Formaterar inkomst i tusental kronor.
-// Exempel: 327 blir "327 tkr".
 function formatIncome(value) {
   return `${Math.round(value).toLocaleString("sv-SE")} tkr`;
 }
 
 // Skapar sammanfattningskort högst upp på sidan.
-// Korten används för att snabbt visa viktiga nyckeltal i urvalet.
 function statCards(cards) {
   return `
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin:20px 0 24px 0;">
@@ -77,7 +71,6 @@ function statCards(cards) {
 }
 
 // Skapar en informationsruta.
-// Här används den för att visa hypotesen tydligare och matcha income-voting.js.
 function infoBox(title, text) {
   return `
     <div style="background:#ffffff; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:20px 0 24px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
@@ -88,7 +81,6 @@ function infoBox(title, text) {
 }
 
 // Skapar en laddningsruta som visas medan databaserna hämtar data.
-// Detta gör att sidan inte ser tom ut under tiden.
 function loadingBox() {
   return `
     <div id="loading-message" style="background:white; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:22px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
@@ -111,8 +103,6 @@ function removeLoadingBox() {
 
 // =====================================================
 // SIDANS INTRODUKTION
-// Här skrivs rubrik, syfte, fråga och hypotes ut på sidan.
-// Den här sidan fungerar som bakgrund till income-voting.js.
 // =====================================================
 
 addMdToPage(`
@@ -133,8 +123,6 @@ addToPage(loadingBox());
 
 // =====================================================
 // DATABASKONTROLL
-// Om databasen inte fungerar visas ett felmeddelande.
-// Annars fortsätter sidan med att hämta och bearbeta data.
 // =====================================================
 
 if (!dbInfoOk) {
@@ -145,8 +133,6 @@ else {
 
   // =====================================================
   // HÄMTA DATA
-  // Här hämtas inkomstdata från MongoDB och kommun-län-koppling från SQLite.
-  // Kommun-län-kopplingen behövs för att kunna jämföra inkomster mellan län.
   // =====================================================
 
   dbQuery.use("kommun-info-mongodb");
@@ -155,10 +141,8 @@ else {
   dbQuery.use("counties-sqlite");
   const lanKommunResult = await dbQuery("SELECT * FROM lan_kommun");
 
-  // Nu är datan hämtad och därför tas laddningsrutan bort.
   removeLoadingBox();
 
-  // Säkerställer att datan alltid blir arrays innan vi använder .map() och .filter().
   const incomeData = Array.isArray(incomeResult)
     ? incomeResult
     : incomeResult?.data || incomeResult?.result || incomeResult?.documents || [];
@@ -169,8 +153,6 @@ else {
 
   // =====================================================
   // KOPPLA KOMMUN TILL LÄN
-  // Inkomstdatan innehåller kommunnamn men behöver län för diagram och filter.
-  // Därför matchas varje kommun mot tabellen lan_kommun.
   // =====================================================
 
   function getCounty(row) {
@@ -185,8 +167,6 @@ else {
 
   // =====================================================
   // GRUPPERA DATA PER LÄN
-  // Funktionen används till stapeldiagrammet.
-  // Den samlar kommunernas inkomster per län och räknar ut länets genomsnitt.
   // =====================================================
 
   function getCountyAverages(data) {
@@ -207,8 +187,6 @@ else {
 
   // =====================================================
   // RENGÖR INKOMSTDATA
-  // Här skapas ett renare dataset med kommun, kön, län och inkomst.
-  // Rader utan kommun, län eller inkomst tas bort så att diagram och tabeller blir korrekta.
   // =====================================================
 
   const cleanedData = incomeData
@@ -226,8 +204,6 @@ else {
 
   // =====================================================
   // SKAPA DROPDOWNS
-  // Här skapas filtren som användaren kan styra sidan med.
-  // Användaren kan välja kön och län.
   // =====================================================
 
   const counties = [...new Set(cleanedData.map(row => row.lan))]
@@ -240,8 +216,6 @@ else {
 
   // =====================================================
   // FILTRERA DATA
-  // Här filtreras datan baserat på användarens val i dropdowns.
-  // Om användaren väljer "Alla län" visas alla län.
   // =====================================================
 
   const filteredData = cleanedData.filter(row => {
@@ -253,8 +227,6 @@ else {
 
   // =====================================================
   // HANTERA TOMT URVAL
-  // Om filtren gör att det inte finns någon data visas ett meddelande.
-  // Annars fortsätter sidan med nyckeltal, diagram, tabeller och analys.
   // =====================================================
 
   if (!filteredData.length) {
@@ -268,8 +240,6 @@ Det finns ingen data för det valda urvalet.
 
     // =====================================================
     // BERÄKNA NYCKELTAL
-    // Här räknas värden fram som används i sammanfattningskort och analys.
-    // numberOfMunicipalities används också för att hantera specialfall som Gotland.
     // =====================================================
 
     const incomes = filteredData.map(row => row.inkomst2022);
@@ -287,8 +257,6 @@ Det finns ingen data för det valda urvalet.
 
     // =====================================================
     // SAMMANFATTNINGSKORT
-    // Om urvalet bara innehåller en kommun visas kort som passar ett enskilt urval.
-    // Om urvalet innehåller flera kommuner visas högsta och lägsta inkomst.
     // =====================================================
 
     addMdToPage(`
@@ -340,8 +308,7 @@ Det finns ingen data för det valda urvalet.
 
     // =====================================================
     // DIAGRAM: INKOMST PER LÄN
-    // Stapeldiagrammet visar genomsnittlig inkomst per län.
-    // Om ett specifikt län väljs visas genomsnittet för kommunerna i det länet.
+    // Ändrat: slantedTextAngle höjd till 45 grader för bättre läsbarhet
     // =====================================================
 
     addMdToPage(`
@@ -362,11 +329,11 @@ Diagrammet visar genomsnittlig årsinkomst per län för det valda urvalet. Om e
         title: "Genomsnittlig årsinkomst per län (2022)",
         legend: { position: "none" },
         height: 550,
-        chartArea: { width: "80%", height: "75%" },
+        chartArea: { width: "80%", height: "70%" },
         hAxis: {
           slantedText: true,
-          slantedTextAngle: 25,
-          textStyle: { fontSize: 12 }
+          slantedTextAngle: 45,
+          textStyle: { fontSize: 11 }
         },
         vAxis: {
           title: "Inkomst i tusental kronor",
@@ -378,8 +345,6 @@ Diagrammet visar genomsnittlig årsinkomst per län för det valda urvalet. Om e
 
     // =====================================================
     // TABELLER
-    // Om urvalet bara innehåller en kommun visas en tabell med vald kommun.
-    // Annars visas de fem kommunerna med högst och lägst inkomst.
     // =====================================================
 
     const sorted = [...filteredData].sort((a, b) => b.inkomst2022 - a.inkomst2022);
@@ -425,8 +390,7 @@ Diagrammet visar genomsnittlig årsinkomst per län för det valda urvalet. Om e
 
     // =====================================================
     // KORT ANALYS
-    // Här sammanfattas resultatet i text.
-    // Analysen anpassas om urvalet bara innehåller en kommun.
+    // Uppdaterad: förklarar nu varför hypotesen stöds med konkreta exempel
     // =====================================================
 
     const countyAverages = getCountyAverages(filteredData);
@@ -458,14 +422,13 @@ För urvalet **${chosenGender}** i **${chosenCounty}** är den genomsnittliga in
 
 Det län som har högst genomsnittlig inkomst i detta urval är **${highestCounty.lan}** med **${formatIncome(highestCounty.averageIncome)}**. Det län som har lägst genomsnittlig inkomst är **${lowestCounty.lan}** med **${formatIncome(lowestCounty.averageIncome)}**.
 
-Resultatet stödjer hypotesen att inkomstnivåer varierar mellan olika delar av Sverige. Framför allt syns skillnader mellan kommuner och län. Denna sida fungerar som en ekonomisk bakgrund inför nästa analys där inkomst kopplas till partier och valresultat.
+Resultatet stödjer hypotesen att inkomstnivåer varierar mellan olika delar av Sverige. Detta syns tydligt i att storstadslänen — framför allt Stockholms län — dominerar toppen av inkomstligan, medan kommuner i norra Sverige och glesbygd återfinns i botten. Skillnaden mellan högst och lägst är betydande, vilket bekräftar att inkomst inte är jämnt fördelad geografiskt. Denna sida fungerar som en ekonomisk bakgrund inför nästa analys där inkomst kopplas till partier och valresultat.
 `;
     }
 
     // =====================================================
     // METOD OCH BEGRÄNSNING
-    // Här förklaras hur analysen har gjorts och vad man ska vara försiktig med.
-    // Detta hjälper användaren att förstå att sidan visar skillnader, inte orsaker.
+    // Uppdaterad: specificerar användning av genomsnitt (ej median) och ettårsbegränsning
     // =====================================================
 
     addMdToPage(`
@@ -475,9 +438,19 @@ ${analysisText}
 
 Analysen bygger på genomsnittlig årsinkomst per kommun år 2022. Inkomsten anges i tusental kronor. Kommunerna kopplas till län genom tabellen **lan_kommun**.
 
+Analysen använder genomsnittlig inkomst, inte median. Det betyder att höga inkomster hos ett fåtal kan dra upp snittet och ge en missvisande bild av den typiska invånarens inkomst. Dessutom baseras analysen på data från ett enskilt år (2022), vilket innebär att tillfälliga variationer kan påverka resultatet.
+
 Denna sida visar ekonomiska skillnader mellan kommuner och län, men den visar inte varför skillnaderna finns. Faktorer som arbetsmarknad, utbildningsnivå, bostadspriser, åldersstruktur och geografisk plats kan påverka inkomstnivåerna.
 
 Det är också viktigt att skilja mellan samband och orsak. Denna sida visar ekonomiska skillnader, men den visar inte att inkomst orsakar ett visst röstningsmönster. Därför används resultatet som bakgrund inför kommande analyser.
+
+## Extremvärden
+
+I analysen förekommer kommuner som sticker ut betydligt från övriga. **Danderyd** och **Lidingö** i Stockholms län har exceptionellt höga genomsnittsinkomster jämfört med resten av Sverige. Dessa kommuner kan dra upp snittet för hela Stockholms län och göra skillnaden mot andra län ännu större än vad som gäller för en typisk stockholmskommun.
+
+I den nedre änden återfinns kommuner i Kalmar och Örebro län med inkomster som ligger klart under rikssnittet. Dessa kommuner präglas ofta av glesbygd, åldrande befolkning och begränsad arbetsmarknad, vilket kan förklara de låga inkomstnivåerna.
+
+Det är viktigt att vara medveten om dessa extremvärden när man tolkar diagram och genomsnitt, eftersom ett fåtal kommuner kan påverka helhetsbilden påtagligt.
 `);
   }
 }

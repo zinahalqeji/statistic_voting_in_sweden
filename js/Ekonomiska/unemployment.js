@@ -2,12 +2,8 @@ import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 
 // =====================================================
 // HJÄLPFUNKTIONER
-// Dessa funktioner används på flera ställen i sidan.
-// De gör koden enklare att läsa och minskar upprepning.
 // =====================================================
 
-// Normaliserar text så att länsnamn och kolumnvärden blir lättare att jämföra.
-// Exempel: "Västra Götalands län" och "vastra gotalands lan" kan matchas enklare.
 function normalize(value) {
   return String(value || "")
     .toLowerCase()
@@ -16,8 +12,6 @@ function normalize(value) {
     .trim();
 }
 
-// Standardiserar könsvärden om arbetslöshetsdatan innehåller kön.
-// Om datan inte har kön används "totalt" som standard.
 function normalizeGender(value) {
   const v = normalize(value);
 
@@ -27,8 +21,6 @@ function normalizeGender(value) {
   return "totalt";
 }
 
-// Hämtar värde från flera möjliga kolumnnamn.
-// Detta gör sidan mer robust eftersom olika datakällor kan använda olika namn.
 function getField(row, names) {
   for (const name of names) {
     if (row[name] !== undefined && row[name] !== null && row[name] !== "") {
@@ -39,8 +31,6 @@ function getField(row, names) {
   return null;
 }
 
-// Gör om värden till tal.
-// Behövs eftersom vissa siffror kan komma som text eller använda kommatecken istället för punkt.
 function toNumber(value) {
   if (value === null || value === undefined || value === "") return null;
 
@@ -54,8 +44,6 @@ function toNumber(value) {
   return Number.isFinite(num) ? num : null;
 }
 
-// Räknar ut genomsnittet av en lista med tal.
-// Tomma eller ogiltiga värden tas bort innan beräkningen.
 function average(values) {
   const nums = values.filter(v =>
     v !== null &&
@@ -68,8 +56,6 @@ function average(values) {
   return nums.reduce((sum, v) => sum + v, 0) / nums.length;
 }
 
-// Formaterar arbetslöshet som procent.
-// Exempel: 7.234 blir "7,2 %".
 function formatPercent(value) {
   return `${value.toLocaleString("sv-SE", {
     minimumFractionDigits: 1,
@@ -77,8 +63,6 @@ function formatPercent(value) {
   })} %`;
 }
 
-// Skapar sammanfattningskort högst upp på sidan.
-// Korten används för att snabbt visa viktiga nyckeltal i urvalet.
 function statCards(cards) {
   return `
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin:20px 0 24px 0;">
@@ -93,8 +77,6 @@ function statCards(cards) {
   `;
 }
 
-// Skapar en informationsruta.
-// Här används den för att visa hypotesen tydligare och matcha de andra ekonomisidorna.
 function infoBox(title, text) {
   return `
     <div style="background:#ffffff; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:20px 0 24px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
@@ -104,8 +86,6 @@ function infoBox(title, text) {
   `;
 }
 
-// Skapar en laddningsruta som visas medan databasen hämtar data.
-// Detta gör att sidan inte ser tom ut under tiden.
 function loadingBox() {
   return `
     <div id="loading-message" style="background:white; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:22px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
@@ -117,7 +97,6 @@ function loadingBox() {
   `;
 }
 
-// Tar bort laddningsrutan när datan är färdighämtad.
 function removeLoadingBox() {
   const loadingMessage = document.getElementById("loading-message");
 
@@ -128,8 +107,6 @@ function removeLoadingBox() {
 
 // =====================================================
 // SIDANS INTRODUKTION
-// Här skrivs rubrik, syfte och analysfråga ut på sidan.
-// Den här sidan fungerar som översikt över arbetslöshet innan arbetslöshet kopplas till valresultat.
 // =====================================================
 
 addMdToPage(`
@@ -150,8 +127,6 @@ addToPage(loadingBox());
 
 // =====================================================
 // DATABASKONTROLL
-// Om databasen inte fungerar visas ett felmeddelande.
-// Annars fortsätter sidan med att hämta och bearbeta data.
 // =====================================================
 
 if (!dbInfoOk) {
@@ -162,8 +137,6 @@ else {
 
   // =====================================================
   // HÄMTA DATA
-  // Här hämtas arbetslöshetsdata från SQLite.
-  // Tabellen kan heta olika beroende på hur gruppen har importerat datan.
   // =====================================================
 
   dbQuery.use("counties-sqlite");
@@ -182,19 +155,16 @@ else {
     }
   }
 
-  // Nu är datan hämtad och därför tas laddningsrutan bort.
   removeLoadingBox();
 
-  // Säkerställer att datan alltid blir en array innan vi använder .map(), .filter() och .flatMap().
   const unemploymentRaw = Array.isArray(unemploymentResult)
     ? unemploymentResult
     : unemploymentResult?.data || unemploymentResult?.result || [];
 
   // =====================================================
   // RENGÖR DATA
-  // Tabellen arbetsloshet_by_lan är i brett format.
-  // Det betyder att årtalen 2018 och 2022 ligger som egna kolumner.
-  // Här gör vi om datan till långt format så varje rad får: län, kön, år och arbetslöshet.
+  // Tabellen är i brett format — årtalen 2018 och 2022 är egna kolumner.
+  // Här görs om till långt format: varje rad får län, kön, år och arbetslöshet.
   // =====================================================
 
   const yearColumns = ["2018", "2022"];
@@ -217,11 +187,6 @@ else {
       row.arbetsloshet !== null
     );
 
-  // =====================================================
-  // HANTERA TOM DATA
-  // Om tabellen saknas eller kolumnerna inte matchar visas ett tydligt meddelande.
-  // =====================================================
-
   if (!unemploymentData.length) {
     addMdToPage(`
 ## Resultat
@@ -233,8 +198,6 @@ Det finns ingen arbetslöshetsdata att visa. Kontrollera att tabellen **arbetslo
 
     // =====================================================
     // SKAPA DROPDOWNS
-    // Här skapas filtren som användaren kan styra analysen med.
-    // Användaren kan välja år, län och kön om kön finns i datan.
     // =====================================================
 
     const years = [...new Set(unemploymentData.map(row => row.year))]
@@ -255,8 +218,6 @@ Det finns ingen arbetslöshetsdata att visa. Kontrollera att tabellen **arbetslo
 
     // =====================================================
     // FILTRERA DATA
-    // Här filtreras arbetslöshetsdatan baserat på användarens val.
-    // Om användaren väljer "Alla län" visas alla län.
     // =====================================================
 
     const filteredData = unemploymentData.filter(row => {
@@ -266,11 +227,6 @@ Det finns ingen arbetslöshetsdata att visa. Kontrollera att tabellen **arbetslo
 
       return yearMatch && countyMatch && genderMatch;
     });
-
-    // =====================================================
-    // HANTERA TOMT URVAL
-    // Om filtren gör att det inte finns någon data visas ett meddelande.
-    // =====================================================
 
     if (!filteredData.length) {
       addMdToPage(`
@@ -287,8 +243,6 @@ Välj ett annat år, kön eller län för att se tillgänglig data.
 
       // =====================================================
       // BERÄKNA NYCKELTAL
-      // Här räknas genomsnitt, högsta och lägsta arbetslöshet fram.
-      // Dessa värden används i kort, tabeller och analys.
       // =====================================================
 
       const values = filteredData.map(row => row.arbetsloshet);
@@ -306,8 +260,6 @@ Välj ett annat år, kön eller län för att se tillgänglig data.
 
       // =====================================================
       // SAMMANFATTNINGSKORT
-      // Om endast ett län är valt visas kort som passar ett enskilt urval.
-      // Om flera län visas högsta och lägsta arbetslöshet.
       // =====================================================
 
       addMdToPage(`
@@ -359,8 +311,7 @@ Välj ett annat år, kön eller län för att se tillgänglig data.
 
       // =====================================================
       // DIAGRAM: ARBETSLÖSHET PER LÄN
-      // Stapeldiagrammet visar arbetslöshet per län i det valda urvalet.
-      // Datan sorteras från högst till lägst arbetslöshet.
+      // Uppdaterat: slantedTextAngle höjd till 45 för bättre läsbarhet
       // =====================================================
 
       const sortedByUnemployment = [...filteredData].sort((a, b) => b.arbetsloshet - a.arbetsloshet);
@@ -381,25 +332,23 @@ Diagrammet visar arbetslösheten per län för det valda året. Län med högre 
           title: `Arbetslöshet per län (${chosenYear})`,
           legend: { position: "none" },
           height: 560,
-          chartArea: { width: "82%", height: "72%" },
+          chartArea: { width: "82%", height: "70%" },
           hAxis: {
             slantedText: true,
-            slantedTextAngle: 25,
-            textStyle: { fontSize: 12 }
+            slantedTextAngle: 45,
+            textStyle: { fontSize: 11 }
           },
           vAxis: {
             title: "Arbetslöshet (%)",
             textStyle: { fontSize: 13 },
-            titleTextStyle: { fontSize: 15, bold: true }
+            titleTextStyle: { fontSize: 15, bold: true },
+            viewWindow: { min: 0 }
           }
         }
       });
 
       // =====================================================
       // TABELLER
-      // Om ett län är valt visas endast valt län.
-      // Annars visas län med högst och lägst arbetslöshet.
-      // Året visas i rubriken istället för i varje tabellrad.
       // =====================================================
 
       if (numberOfCounties === 1) {
@@ -439,9 +388,8 @@ Diagrammet visar arbetslösheten per län för det valda året. Län med högre 
       }
 
       // =====================================================
-      // ANALYS
-      // Här sammanfattas resultatet i text.
-      // Texten anpassas beroende på om ett eller flera län visas.
+      // KORT ANALYS
+      // Uppdaterad: stärkt kausalitetsdiskussion
       // =====================================================
 
       let analysisText = "";
@@ -468,13 +416,13 @@ För urvalet **${chosenGender}**, **Alla län**, **${chosenYear}** är den genom
 Det län som har högst arbetslöshet är **${highest.lan}** med **${formatPercent(highest.arbetsloshet)}**. Det län som har lägst arbetslöshet är **${lowest.lan}** med **${formatPercent(lowest.arbetsloshet)}**.
 
 Skillnaden mellan högsta och lägsta arbetslöshet är **${formatPercent(difference)}**, vilket visar att arbetslösheten varierar mellan olika delar av Sverige. Resultatet stödjer hypotesen att arbetslösheten skiljer sig mellan län.
+
+Det är dock viktigt att notera att skillnader i arbetslöshet inte *orsakar* ett visst röstningsmönster, även om ett samband kan finnas. Bakomliggande faktorer som industristruktur, utbildningsnivå och geografisk avskildhet påverkar troligen både arbetslösheten och hur invånarna röstar. Dessa faktorer behöver beaktas innan man drar slutsatser om orsak och verkan.
 `;
       }
 
       // =====================================================
       // METOD OCH BEGRÄNSNING
-      // Här förklaras hur analysen har gjorts och vad man ska vara försiktig med.
-      // Eftersom arbetslösheten är på länsnivå är detta extra viktigt.
       // =====================================================
 
       addMdToPage(`
@@ -495,6 +443,14 @@ Därför används denna sida som en ekonomisk bakgrund inför nästa analys där
 Vissa värden saknas i datan, till exempel om ett län har **NULL** för ett visst år eller kön. Dessa rader filtreras bort från analysen, vilket kan göra att antalet län blir lägre än 21.
 
 När könsfiltret står på Totalt används totalvärdet från datan. Det är alltså inte en enkel summering av män och kvinnor, utan arbetslösheten för hela gruppen tillsammans.
+
+## Extremvärden
+
+I analysen sticker vissa län ut tydligt från övriga. **Södermanlands län** har i regel den högsta arbetslösheten i Sverige och ligger klart över rikssnittet. Detta beror troligen på en kombination av faktorer som begränsad arbetsmarknad, lägre utbildningsnivå och närheten till Stockholm som kan leda till pendling ut ur länet snarare än lokala jobb.
+
+I den nedre änden återfinns **Norrbottens län** och **Västerbottens län** med relativt låg arbetslöshet, trots att de är glesbygdslän. Detta kan delvis förklaras av en stark offentlig sektor och basindustri i dessa regioner.
+
+Dessa extremvärden kan påverka genomsnittet och bör beaktas när man tolkar diagrammet. Ett fåtal län med mycket hög eller låg arbetslöshet drar i viss mån på snittet för hela landet.
 `);
     }
   }

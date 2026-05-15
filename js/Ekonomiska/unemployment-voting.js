@@ -2,12 +2,8 @@ import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 
 // =====================================================
 // HJÄLPFUNKTIONER
-// Dessa funktioner används på flera ställen i sidan.
-// De gör koden enklare att läsa och minskar upprepning.
 // =====================================================
 
-// Normaliserar text så att kommun- och länsnamn blir lättare att jämföra.
-// Exempel: "Västra Götalands län" och "vastra gotalands lan" kan matchas enklare.
 function normalize(value) {
   return String(value || "")
     .toLowerCase()
@@ -16,8 +12,6 @@ function normalize(value) {
     .trim();
 }
 
-// Standardiserar könsvärden från arbetslöshetsdatan.
-// Det gör att dropdownen kan filtrera på totalt, kvinnor och män även om datan skrivs på olika sätt.
 function normalizeGender(value) {
   const v = normalize(value);
 
@@ -27,8 +21,6 @@ function normalizeGender(value) {
   return "totalt";
 }
 
-// Visar kortare och renare partinamn på sidan.
-// Originalnamnen används fortfarande i datan så att matchningen mot databasen fungerar.
 function displayPartyName(party) {
   const names = {
     "Arbetarepartiet-Socialdemokraterna": "Socialdemokraterna",
@@ -38,8 +30,6 @@ function displayPartyName(party) {
   return names[party] || party;
 }
 
-// Hämtar värde från flera möjliga kolumnnamn.
-// Detta gör sidan mer robust eftersom olika datakällor kan använda olika namn.
 function getField(row, names) {
   for (const name of names) {
     if (row[name] !== undefined && row[name] !== null && row[name] !== "") {
@@ -50,8 +40,6 @@ function getField(row, names) {
   return null;
 }
 
-// Gör om värden till tal.
-// Behövs eftersom vissa siffror kan komma som text eller använda kommatecken istället för punkt.
 function toNumber(value) {
   if (value === null || value === undefined || value === "") return null;
 
@@ -65,8 +53,6 @@ function toNumber(value) {
   return Number.isFinite(num) ? num : null;
 }
 
-// Räknar ut genomsnittet av en lista med tal.
-// Tomma eller ogiltiga värden tas bort innan beräkningen.
 function average(values) {
   const nums = values.filter(v =>
     v !== null &&
@@ -79,8 +65,6 @@ function average(values) {
   return nums.reduce((sum, v) => sum + v, 0) / nums.length;
 }
 
-// Formaterar procentvärden med en decimal.
-// Exempel: 7.234 blir "7,2 %".
 function formatPercent(value) {
   return `${value.toLocaleString("sv-SE", {
     minimumFractionDigits: 1,
@@ -88,8 +72,6 @@ function formatPercent(value) {
   })} %`;
 }
 
-// Beräknar korrelation mellan två variabler.
-// Här används den för att mäta sambandet mellan arbetslöshet och partistöd.
 function correlation(xs, ys) {
   if (xs.length !== ys.length || xs.length < 2) return null;
 
@@ -115,8 +97,6 @@ function correlation(xs, ys) {
   return numerator / denominator;
 }
 
-// Tolkar hur stark korrelationen är.
-// Detta gör att sidan kan visa text som "svagt", "måttligt" eller "starkt" samband.
 function correlationStrength(value) {
   if (value === null) return "kan inte beräknas";
 
@@ -127,9 +107,6 @@ function correlationStrength(value) {
   return "svagt";
 }
 
-// Avgör om korrelationen är positiv eller negativ.
-// Positiv betyder att partistödet ökar när arbetslösheten ökar.
-// Negativ betyder att partistödet minskar när arbetslösheten ökar.
 function correlationDirection(value) {
   if (value === null) return "oklart";
   if (value > 0) return "positivt";
@@ -137,8 +114,6 @@ function correlationDirection(value) {
   return "inget tydligt";
 }
 
-// Skapar en kort beskrivning av korrelationen.
-// Exempel: "måttligt positivt samband".
 function correlationLabel(value) {
   if (value === null) return "kan inte beräknas";
 
@@ -149,8 +124,6 @@ function correlationLabel(value) {
   return `${strength} ${direction} samband`;
 }
 
-// Skapar en längre förklaring av korrelationen.
-// Texten ändras automatiskt beroende på om sambandet är positivt eller negativt.
 function describeCorrelation(value, party) {
   const partyName = displayPartyName(party);
 
@@ -171,8 +144,6 @@ function describeCorrelation(value, party) {
   return `Korrelationen är nära noll, vilket innebär att analysen inte visar något tydligt linjärt samband mellan arbetslöshet och stöd för ${partyName} i det valda urvalet.`;
 }
 
-// Förklarar om resultatet ger stöd för hypotesen.
-// Detta gör resultatdelen mer analytisk och inte bara beskrivande.
 function hypothesisConclusion(value) {
   if (value === null) {
     return "Det går därför inte att avgöra om hypotesen får stöd i det valda urvalet.";
@@ -185,15 +156,11 @@ function hypothesisConclusion(value) {
   return "Resultatet ger svagt stöd för hypotesen, eftersom sambandet mellan arbetslöshet och partistöd är litet i det valda urvalet.";
 }
 
-// Skapar hypotesen som visas på sidan.
-// Partinamnet är dynamiskt och ändras beroende på vilket parti användaren väljer.
 function hypothesisText(party) {
   const partyName = displayPartyName(party);
   return `Vi undersöker om stödet för ${partyName} har ett samband med arbetslöshet. Vår hypotes är att partistödet kan skilja sig mellan kommuner som ligger i län med högre eller lägre arbetslöshet. Samtidigt är det viktigt att komma ihåg att arbetslösheten finns på länsnivå, medan valresultatet finns på kommunnivå.`;
 }
 
-// Skapar sammanfattningskort.
-// Korten används för att snabbt visa viktiga nyckeltal i urvalet.
 function statCards(cards) {
   return `
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin:20px 0 24px 0;">
@@ -208,8 +175,6 @@ function statCards(cards) {
   `;
 }
 
-// Skapar en informationsruta.
-// Här används den för att visa hypotesen tydligare på sidan.
 function infoBox(title, text) {
   return `
     <div style="background:#ffffff; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:20px 0 24px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
@@ -219,8 +184,6 @@ function infoBox(title, text) {
   `;
 }
 
-// Skapar en laddningsruta som visas medan databaserna hämtar data.
-// Detta gör att sidan inte ser tom ut under tiden.
 function loadingBox() {
   return `
     <div id="loading-message" style="background:white; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:22px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
@@ -232,7 +195,6 @@ function loadingBox() {
   `;
 }
 
-// Tar bort laddningsrutan när datan är färdighämtad.
 function removeLoadingBox() {
   const loadingMessage = document.getElementById("loading-message");
 
@@ -243,8 +205,6 @@ function removeLoadingBox() {
 
 // =====================================================
 // SIDANS INTRODUKTION
-// Här skrivs rubrik, syfte och analysfråga ut på sidan.
-// Den här sidan kopplar arbetslöshetsdata till valresultat.
 // =====================================================
 
 addMdToPage(`
@@ -260,8 +220,6 @@ addToPage(loadingBox());
 
 // =====================================================
 // DATABASKONTROLL
-// Om databasuppkopplingen inte fungerar visas ett felmeddelande.
-// Annars fortsätter sidan med att hämta och bearbeta data.
 // =====================================================
 
 if (!dbInfoOk) {
@@ -272,8 +230,6 @@ else {
 
   // =====================================================
   // HÄMTA DATA
-  // Här hämtas arbetslöshetsdata, kommun-län-koppling och valresultat.
-  // Dessa tre datakällor behövs för att koppla arbetslöshet till partistöd.
   // =====================================================
 
   dbQuery.use("counties-sqlite");
@@ -296,10 +252,8 @@ else {
   dbQuery.use("riksdagsval-neo4j");
   const electionResult = await dbQuery("MATCH (n:Partiresultat) RETURN n");
 
-  // Nu är datan hämtad och därför tas laddningsrutan bort.
   removeLoadingBox();
 
-  // Säkerställer att datan alltid blir arrays innan vi använder .map(), .filter() och .find().
   const lanKommun = Array.isArray(lanKommunResult)
     ? lanKommunResult
     : lanKommunResult?.data || lanKommunResult?.result || [];
@@ -314,8 +268,6 @@ else {
 
   // =====================================================
   // KOPPLA KOMMUN TILL LÄN
-  // Valresultatet finns på kommunnivå men arbetslösheten finns på länsnivå.
-  // Därför används tabellen lan_kommun för att hitta rätt län för varje kommun.
   // =====================================================
 
   function getCountyByMunicipality(kommun) {
@@ -330,9 +282,6 @@ else {
 
   // =====================================================
   // RENGÖR ARBETSLÖSHETSDATA
-  // Tabellen arbetsloshet_by_lan är i brett format.
-  // Det betyder att årtalen 2018 och 2022 ligger som egna kolumner.
-  // Här gör vi om datan till långt format så varje rad får: län, kön, år och arbetslöshet.
   // =====================================================
 
   const yearColumns = ["2018", "2022"];
@@ -357,8 +306,6 @@ else {
 
   // =====================================================
   // RENGÖR VALDATA
-  // Här skapas ett rent dataset med kommun, län, parti och röster för 2018 och 2022.
-  // Kommuner utan län eller röster tas bort.
   // =====================================================
 
   const cleanedElection = electionResults
@@ -377,11 +324,6 @@ else {
       row.roster2022 !== null
     );
 
-  // =====================================================
-  // HANTERA TOM DATA
-  // Om arbetslöshetsdatan eller valresultatet saknas visas ett tydligt meddelande.
-  // =====================================================
-
   if (!unemploymentData.length || !cleanedElection.length) {
     addMdToPage(`
 ## Resultat
@@ -393,8 +335,6 @@ Det finns inte tillräckligt med data för att göra analysen. Kontrollera att a
 
     // =====================================================
     // RÄKNA TOTALA RÖSTER PER KOMMUN
-    // För att kunna räkna ut partiets röstandel behövs totalt antal röster i kommunen.
-    // Funktionen summerar därför alla partiers röster per kommun för valt år.
     // =====================================================
 
     function buildTotalVotesMap(year) {
@@ -416,8 +356,6 @@ Det finns inte tillräckligt med data för att göra analysen. Kontrollera att a
 
     // =====================================================
     // SKAPA DROPDOWNS
-    // Här skapas filtren som användaren kan styra analysen med.
-    // Dropdownen visar korta partinamn, men koden använder originalnamnen för att matcha databasen.
     // =====================================================
 
     const parties = [...new Set(cleanedElection.map(row => row.parti))]
@@ -446,13 +384,10 @@ Det finns inte tillräckligt med data för att göra analysen. Kontrollera att a
     const selectedGender = normalizeGender(chosenGender);
     const totalVotesMap = buildTotalVotesMap(chosenYear);
 
-    // Hypotesen skrivs ut efter dropdowns eftersom den innehåller valt parti.
     addToPage(infoBox("Analysens hypotes", hypothesisText(chosenParty)));
 
     // =====================================================
     // SKAPA ARBETSLÖSHETSKARTA
-    // Här skapas en karta där varje län kopplas till sitt arbetslöshetsvärde.
-    // Den används sedan för att ge varje kommun sitt läns arbetslöshet.
     // =====================================================
 
     const unemploymentRows = unemploymentData.filter(row => {
@@ -469,8 +404,6 @@ Det finns inte tillräckligt med data för att göra analysen. Kontrollera att a
 
     // =====================================================
     // SLÅ IHOP ARBETSLÖSHETSDATA OCH VALDATA
-    // Här kopplas varje kommun till sitt läns arbetslöshetsvärde.
-    // Sedan räknas partiets röstandel ut som procent av kommunens totala röster.
     // =====================================================
 
     const mergedData = cleanedElection
@@ -500,11 +433,6 @@ Det finns inte tillräckligt med data för att göra analysen. Kontrollera att a
       })
       .filter(row => row !== null);
 
-    // =====================================================
-    // HANTERA TOMT URVAL
-    // Om filtren gör att det inte finns någon data visas ett meddelande.
-    // =====================================================
-
     if (!mergedData.length) {
       addMdToPage(`
 ## Resultat
@@ -518,7 +446,6 @@ Det kan bero på att arbetslöshetsvärdet saknas för det valda länet, året e
 
       // =====================================================
       // BERÄKNA NYCKELTAL
-      // Här räknas värden fram som används i kort, diagram och analys.
       // =====================================================
 
       const unemploymentValues = mergedData.map(row => row.arbetsloshet);
@@ -549,8 +476,6 @@ Det kan bero på att arbetslöshetsvärdet saknas för det valda länet, året e
 
       // =====================================================
       // SAMMANFATTNINGSKORT
-      // Visar en snabb översikt över urvalet.
-      // Här ser användaren antal kommuner, genomsnittlig arbetslöshet, genomsnittligt stöd och korrelation.
       // =====================================================
 
       addMdToPage(`
@@ -579,10 +504,6 @@ Det kan bero på att arbetslöshetsvärdet saknas för det valda länet, året e
 
       // =====================================================
       // DIAGRAM: ARBETSLÖSHET VS PARTISTÖD
-      // Scatterploten visar varje kommun som en punkt.
-      // X-axeln visar arbetslösheten i kommunens län, eftersom arbetslöshetsdatan finns på länsnivå.
-      // Y-axeln visar partiets röstandel.
-      // Trendlinjen hjälper användaren att se sambandet visuellt.
       // =====================================================
 
       addMdToPage(`
@@ -624,8 +545,6 @@ Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i komm
 
       // =====================================================
       // RESULTAT
-      // Här skrivs den viktigaste tolkningen av analysen ut.
-      // Texten anpassas automatiskt efter korrelationens riktning och styrka.
       // =====================================================
 
       addMdToPage(`
@@ -641,9 +560,7 @@ Det högsta stödet för **${chosenPartyName}** finns i **${highestSupport.kommu
 `);
 
       // =====================================================
-      // TABELLER: HÖGST OCH LÄGST PARTISTÖD
-      // Tabellerna gör det lättare att se konkreta exempel från datan.
-      // De visar var det valda partiet har starkast och svagast stöd.
+      // TABELLER
       // =====================================================
 
       const sortedBySupport = [...mergedData].sort((a, b) => b.partyShare - a.partyShare);
@@ -676,8 +593,7 @@ Det högsta stödet för **${chosenPartyName}** finns i **${highestSupport.kommu
 
       // =====================================================
       // KORT ANALYS
-      // Här kopplas resultatet tillbaka till frågan och hypotesen.
-      // Texten förklarar också varför resultatet ska tolkas försiktigt.
+      // Uppdaterad: stärkt kausalitetsdiskussion
       // =====================================================
 
       addMdToPage(`
@@ -687,7 +603,7 @@ För urvalet **${chosenPartyName}**, **${chosenGender}**, **${chosenCounty}**, *
 
 Den högsta arbetslösheten i det kopplade urvalet finns i **${highestUnemployment.lan}** med **${formatPercent(highestUnemployment.arbetsloshet)}**. Den lägsta arbetslösheten finns i **${lowestUnemployment.lan}** med **${formatPercent(lowestUnemployment.arbetsloshet)}**.
 
-Resultatet kan tyda på att ekonomiska skillnader mellan län hänger ihop med politiska röstningsmönster. Samtidigt är det viktigt att komma ihåg att analysen använder arbetslöshet på länsnivå och valresultat på kommunnivå. Därför blir analysen mindre detaljerad än inkomstanalysen.
+Resultatet kan tyda på att ekonomiska skillnader mellan län hänger ihop med politiska röstningsmönster. Det är dock viktigt att notera att ett samband inte bevisar kausalitet — arbetslösheten *orsakar* troligen inte i sig hur människor röstar. En mer trolig förklaring är att bakomliggande faktorer som industristruktur, utbildningsnivå och demografisk sammansättning påverkar både arbetslöshet och röstbeteende samtidigt. Dessutom är det svårt att isolera arbetslöshetens effekt när analysen sker på länsnivå snarare än individnivå.
 
 ## Metod och begränsning
 
@@ -700,6 +616,14 @@ När könsfiltret står på Totalt används totalvärdet från arbetslöshetsdat
 Vissa värden saknas i datan, till exempel om ett län har **NULL** för ett visst år eller kön. Dessa rader filtreras bort från analysen, vilket kan göra att vissa län saknas i ett urval.
 
 Det är också viktigt att skilja mellan samband och orsak. En korrelation visar att två variabler varierar tillsammans, men den bevisar inte att arbetslöshet orsakar ett visst röstningsmönster. Andra faktorer som utbildning, ålder, migration, inkomst och geografisk plats kan också påverka hur människor röstar.
+
+## Extremvärden
+
+I analysen förekommer kommuner och län som sticker ut tydligt. **Södermanlands län** har genomgående hög arbetslöshet och kan dra trendlinjen i diagrammet mer än vad som gäller för ett typiskt län. Kommuner i detta län kan därför ha ett oproportionerligt stort inflytande på korrelationsberäkningen.
+
+I den nedre änden finns kommuner i **Norrbottens** och **Västerbottens** län med låg arbetslöshet. Dessa är glesbygdslän med stark offentlig sektor och basindustri, vilket gör att de avviker från det typiska mönstret för glesbygd.
+
+Det är viktigt att vara medveten om att ett fåtal län med extrema arbetslöshetsvärden kan påverka korrelationen påtagligt, och att resultatet bör tolkas som en indikation snarare än ett definitivt bevis på samband.
 `);
     }
   }
