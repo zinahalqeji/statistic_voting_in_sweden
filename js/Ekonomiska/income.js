@@ -87,6 +87,28 @@ function infoBox(title, text) {
   `;
 }
 
+// Skapar en laddningsruta som visas medan databaserna hämtar data.
+// Detta gör att sidan inte ser tom ut under tiden.
+function loadingBox() {
+  return `
+    <div id="loading-message" style="background:white; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:22px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+      <h3 style="margin:0 0 8px 0; font-size:19px;">Laddar analysen...</h3>
+      <p style="margin:0; line-height:1.6; font-size:16px;">
+        Hämtar inkomstdata och kommunernas länskoppling. Diagram och tabeller visas strax.
+      </p>
+    </div>
+  `;
+}
+
+// Tar bort laddningsrutan när datan är färdighämtad.
+function removeLoadingBox() {
+  const loadingMessage = document.getElementById("loading-message");
+
+  if (loadingMessage) {
+    loadingMessage.remove();
+  }
+}
+
 // =====================================================
 // SIDANS INTRODUKTION
 // Här skrivs rubrik, syfte, fråga och hypotes ut på sidan.
@@ -107,6 +129,8 @@ addToPage(infoBox(
   "Vi tror att inkomstnivåer skiljer sig tydligt mellan olika delar av Sverige och att storstadsområden generellt har högre genomsnittlig inkomst än mindre kommuner."
 ));
 
+addToPage(loadingBox());
+
 // =====================================================
 // DATABASKONTROLL
 // Om databasen inte fungerar visas ett felmeddelande.
@@ -114,6 +138,7 @@ addToPage(infoBox(
 // =====================================================
 
 if (!dbInfoOk) {
+  removeLoadingBox();
   displayDbNotOkText();
 }
 else {
@@ -125,10 +150,22 @@ else {
   // =====================================================
 
   dbQuery.use("kommun-info-mongodb");
-  const incomeData = await dbQuery.collection("incomeByKommun").find({});
+  const incomeResult = await dbQuery.collection("incomeByKommun").find({});
 
   dbQuery.use("counties-sqlite");
-  const lanKommun = await dbQuery("SELECT * FROM lan_kommun");
+  const lanKommunResult = await dbQuery("SELECT * FROM lan_kommun");
+
+  // Nu är datan hämtad och därför tas laddningsrutan bort.
+  removeLoadingBox();
+
+  // Säkerställer att datan alltid blir arrays innan vi använder .map() och .filter().
+  const incomeData = Array.isArray(incomeResult)
+    ? incomeResult
+    : incomeResult?.data || incomeResult?.result || incomeResult?.documents || [];
+
+  const lanKommun = Array.isArray(lanKommunResult)
+    ? lanKommunResult
+    : lanKommunResult?.data || lanKommunResult?.result || [];
 
   // =====================================================
   // KOPPLA KOMMUN TILL LÄN
