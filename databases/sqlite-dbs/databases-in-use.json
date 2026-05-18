@@ -1,8 +1,28 @@
 [
-    {
+  {
     "name": "counties-sqlite",
     "type": "sqlite",
     "file": "counties.sqlite3"
+  },
+  {
+    "name": "undersokning_2018",
+    "type": "sqlite",
+    "file": "undersokning_2018.db"
+  },
+  {
+    "name": "undersokning_2022",
+    "type": "sqlite",
+    "file": "undersokning_2022.db"
+  },
+  {
+    "name": "valresultat",
+    "type": "sqlite",
+    "file": "valresultat.db"
+  },
+  {
+    "name": "education-sqlite",
+    "type": "sqlite",
+    "file": "education.sqlite3"
   },
   {
     "name": "geo-mysql",
@@ -14,12 +34,6 @@
       "password": "8`)MjwHShtDf",
       "database": "dm24"
     }
-  },
-
-   {
-    "name": "education-sqlite",
-    "type": "sqlite",
-    "file": "education.sqlite3"
   },
   {
     "name": "kommun-info-mongodb",
@@ -41,4 +55,3 @@
     }
   }
 ]
-
