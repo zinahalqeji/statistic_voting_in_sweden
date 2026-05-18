@@ -5,10 +5,10 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
-  // ─── INTRO ───
+  // INTRO
 
   addMdToPage(`
-# 🎓 Utbildning & Röstning
+# Utbildning & Röstning
 
 <div style="
 background:#F1F5F9;
@@ -33,12 +33,11 @@ Vi analyserar:
 </div>
 `);
 
-  // ─── DROPDOWNS ───
+  // DROPDOWNS
 
-  let valtAr = addDropdown("Välj valår:", ["2018", "2022"]);
   let valtKon = addDropdown("Filtrera efter kön:", ["Alla", "Män", "Kvinnor"]);
 
-  // ─── HJÄLPFUNKTIONER ───
+  // HJÄLPFUNKTIONER
 
   function hamtaLanForKommun(kommunNamn) {
     let match = lanKommun.find(lk => lk.kommun === kommunNamn);
@@ -136,9 +135,17 @@ Vi analyserar:
     return { tValue: t, pValue };
   }
 
-  // ─── SEKTION 1: UTBILDNINGSNIVÅER NATIONELLT ───
+  // Hjälpare för Google Charts
+  function makeChartFriendly(data, ...columns) {
+    return [
+      columns,
+      ...data.map(row => columns.map(col => row[col]))
+    ];
+  }
 
-  addMdToPage(`## 📊 Utbildningsnivåer i Sverige – nationell översikt`);
+  // SEKTION 1: UTBILDNINGSNIVÅER NATIONELLT
+
+  addMdToPage(`## Utbildningsnivåer i Sverige – nationell översikt`);
 
   // Definierade nivåer att aggregera
   let utbildningsNivaer = [
@@ -181,7 +188,7 @@ Vi analyserar:
   });
 
   if (!nationellUtbMap.size) {
-    addMdToPage(`> ⚠️ Ingen utbildningsdata hittades för valt kön.`);
+    addMdToPage(`Ingen utbildningsdata hittades för valt kön.`);
   } else {
 
     let nationellChartData = [["Utbildningsnivå", "2018", "2022"]];
@@ -212,9 +219,11 @@ Gymnasial utbildning är den vanligaste nivån. Noteringen "3 år eller mer" fö
 utbildning inkluderar högskoleutbildade – en grupp som ofta studeras i politisk analys.
 `);
 
-    // ─── SEKTION 2: HÖGSKOLEUTBILDNING PER KOMMUN ───
+    let valtAr = addDropdown("Välj valår:", ["2018", "2022"]);
 
-    addMdToPage(`## 🗺️ Högskoleutbildning per kommun`);
+    // SEKTION 2: HÖGSKOLEUTBILDNING PER KOMMUN
+
+    addMdToPage(`## Högskoleutbildning per kommun`);
 
     // Högskoleutbildade = "eftergymnasial utbildning, 3 år eller mer" + forskarutbildning
     let hogskolaPartier = [
@@ -225,7 +234,6 @@ utbildning inkluderar högskoleutbildade – en grupp som ofta studeras i politi
     // Aggregera högskoleutbildade per kommun
     let kommunUtbMap = new Map();
     filtreradUtb.forEach(e => {
-      // educationInfo använder "municipality" som kolumnnamn
       let kommunNamn = e.municipality;
       if (!kommunNamn) return;
       let niva = e.educationalLevel;
@@ -257,7 +265,7 @@ utbildning inkluderar högskoleutbildade – en grupp som ofta studeras i politi
       .filter(d => d.andelHogskola > 0);
 
     if (!kommunHogskola.length) {
-      addMdToPage(`> ⚠️ Kunde inte beräkna högskoleandelar per kommun.`);
+      addMdToPage(`Kunde inte beräkna högskoleandelar per kommun.`);
     } else {
 
       // Top/botten 15 kommuner per högskoleutbildning
@@ -305,9 +313,9 @@ utbildning inkluderar högskoleutbildade – en grupp som ofta studeras i politi
         }
       });
 
-      // ─── SEKTION 3: UTBILDNING VS RÖSTNING ───
+      // SEKTION 3: UTBILDNING VS RÖSTNING – KORRELATION
 
-      addMdToPage(`## 🗳️ Utbildning vs Röstning – Korrelationsanalys`);
+      addMdToPage(`## Utbildning vs Röstning – Korrelationsanalys`);
 
       // Bygg valdata
       let rensadeVal = rensaValdata(electionResults);
@@ -344,7 +352,7 @@ utbildning inkluderar högskoleutbildade – en grupp som ofta studeras i politi
       });
 
       if (!korrelationsData.length) {
-        addMdToPage(`> ⚠️ Inga matchande kommuner mellan utbildningsdata och valdata.`);
+        addMdToPage(`Inga matchande kommuner mellan utbildningsdata och valdata.`);
       } else {
 
         // Korrelation per parti
@@ -359,7 +367,7 @@ utbildning inkluderar högskoleutbildade – en grupp som ofta studeras i politi
 
         drawGoogleChart({
           type: "BarChart",
-          data: makeChartFriendly(korrelationsPerParti, "Parti", "Korrelation med högskoleutbildning"),
+          data: makeChartFriendly(korrelationsPerParti, "parti", "korrelation"),
           options: {
             height: 450,
             chartArea: { left: 240, right: 60, top: 40, bottom: 60 },
@@ -377,16 +385,16 @@ utbildning inkluderar högskoleutbildade – en grupp som ofta studeras i politi
 Partier med negativ korrelation tenderar att vara starkare i kommuner med lägre utbildningsnivå.
 `);
 
-        // ─── SPRIDNINGSDIAGRAM ───
+        // SPRIDNINGSDIAGRAM
 
-        addMdToPage(`## 📈 Spridningsdiagram: Högskoleutbildning vs Politiska block`);
+        addMdToPage(`## Spridningsdiagram: Högskoleutbildning vs Politiska block`);
 
         let hogerPartier = ["Moderaterna", "Kristdemokraterna", "Liberalerna", "Sverigedemokraterna"];
         let vansterPartier = [
           "Socialdemokraterna",
           "Arbetarepartiet-Socialdemokraterna",
           "Vänsterpartiet",
-          "Miljöpartiet",
+          "Miljöpartiet de gröna",
           "Centerpartiet"
         ];
 
@@ -402,7 +410,7 @@ Partier med negativ korrelation tenderar att vara starkare i kommuner med lägre
 
         drawGoogleChart({
           type: "ScatterChart",
-          data: makeChartFriendly(spridningsData, "Andel högskoleutbildade", "Högerblock (%)", "Vänsterblock (%)"),
+          data: makeChartFriendly(spridningsData, "andelHogskola", "hogerBlock", "vansterBlock"),
           options: {
             height: 500,
             chartArea: { left: 60, right: 20, top: 40, bottom: 60 },
@@ -427,9 +435,9 @@ Partier med negativ korrelation tenderar att vara starkare i kommuner med lägre
 - Vänsterblocket ↔ högskoleutbildning: **r = ${korrelVanster.toFixed(3)}**
 `);
 
-        // ─── HYPOTESPRÖVNING: VÄLUTBILDADE VS LÄGRE UTBILDADE ───
+        // HYPOTESPRÖVNING: VÄLUTBILDADE VS LÄGRE UTBILDADE
 
-        addMdToPage(`## 🧪 Hypotesprövning: Välutbildade vs lägre utbildade kommuner`);
+        addMdToPage(`## Hypotesprövning: Välutbildade vs lägre utbildade kommuner`);
 
         let hogskolaVarden = korrelationsData.map(d => d.andelHogskola);
         let medianHogskola = median(hogskolaVarden);
@@ -441,7 +449,7 @@ Partier med negativ korrelation tenderar att vara starkare i kommuner med lägre
           "Socialdemokraterna",
           "Arbetarepartiet-Socialdemokraterna",
           "Vänsterpartiet",
-          "Miljöpartiet",
+          "Miljöpartiet de gröna",
           "Centerpartiet"
         ];
 
@@ -461,7 +469,7 @@ Partier med negativ korrelation tenderar att vara starkare i kommuner med lägre
 
         addMdToPage(`
 <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #28a745; margin: 20px 0;">
-<h4>📐 T-test-resultat (Vänsterblocket)</h4>
+<h4> T-test-resultat (Vänsterblocket)</h4>
 <table style="border: none; width: 100%;">
 <tr><td style="border: none;"><strong>Median högskoleutbildade (gräns):</strong></td><td style="border: none; text-align: right;">${medianHogskola.toFixed(1)}%</td></tr>
 <tr><td style="border: none;"><strong>Hög utbildning (≥ median) – vänsterstöd:</strong></td><td style="border: none; text-align: right;">${hogVansterMedel.toFixed(2)}%</td></tr>
@@ -478,22 +486,21 @@ ${tTestRes
 <div style="background: ${hypotesBekraftad
             ? "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)"
             : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"}; color: white; padding: 25px; border-radius: 12px; margin: 20px 0;">
-<h3 style="color: white; margin-top: 0;">${hypotesBekraftad ? "✅ HYPOTES BEKRÄFTAD" : "⚠️ HYPOTES EJ STATISTISKT BEKRÄFTAD"}</h3>
-<p style="font-size: 1.1em; line-height: 1.6;">
+<h3 style="color: white; margin-top: 0;">${hypotesBekraftad ? " HYPOTES BEKRÄFTAD" : " HYPOTES EJ STATISTISKT BEKRÄFTAD"}</h3>
+<p style="font-size: 1.1em; line-height: 1.6%;">
 <strong>Hypotes:</strong> "Kommuner med hög utbildningsnivå röstar mer på vänsterblocket"
 </p>
-<p style="font-size: 1.1em; line-height: 1.6;">
+<p style="font-size: 1.1em; line-height: 1.6%;">
 ${hypotesBekraftad
             ? `Kommuner med hög andel högskoleutbildade har signifikant högre stöd för vänsterblocket (${hogVansterMedel.toFixed(1)}% vs ${lagVansterMedel.toFixed(1)}%). Skillnaden är statistiskt signifikant (p < 0.05).`
-            : `Kommuner med hög utbildningsnivå har ${hogVansterMedel > lagVansterMedel ? "något" : "inte"} högre stöd för vänsterblocket (${hogVansterMedel.toFixed(1)}% vs ${lagVansterMedel.toFixed(1)}%). ${tTestRes && tTestRes.pValue >= 0.05 ? "Skillnaden är inte statistiskt signifikant (p ≥ 0.05)." : ""}`
-          }
+            : `Kommuner med hög utbildningsnivå har ${hogVansterMedel > lagVansterMedel ? "något" : "inte"} högre stöd för vänsterblocket (${hogVansterMedel.toFixed(1)}% vs ${lagVansterMedel.toFixed(1)}%). ${tTestRes && tTestRes.pValue >= 0.05 ? "Skillnaden är inte statistiskt signifikant (p ≥ 0.05)." : ""}`}
 </p>
 </div>
 `);
 
-        // ─── TABELL: KOMMUNER MED HÖG UTBILDNING ───
+        // TABELL: KOMMUNER MED HÖG UTBILDNING
 
-        addMdToPage(`## 📋 Kommuner med högst högskoleutbildning och deras röstmönster`);
+        addMdToPage(`## Kommuner med högst högskoleutbildning och deras röstmönster`);
 
         let tabellData = korrelationsData
           .sort((a, b) => b.andelHogskola - a.andelHogskola)
@@ -506,7 +513,7 @@ ${hypotesBekraftad
             "M (%)": (d["Moderaterna"] || 0).toFixed(1),
             "SD (%)": (d["Sverigedemokraterna"] || 0).toFixed(1),
             "V (%)": (d["Vänsterpartiet"] || 0).toFixed(1),
-            "MP (%)": (d["Miljöpartiet"] || 0).toFixed(1)
+            "MP (%)": (d["Miljöpartiet de gröna"] || 0).toFixed(1)
           }));
 
         tableFromData({
@@ -519,7 +526,7 @@ ${hypotesBekraftad
 
     }
 
-    // ─── SLUTSATS ───
+    // SLUTSATS
 
     addMdToPage(`
 <div style="
@@ -544,12 +551,6 @@ Nyckelresultat:
 inkomst, ålder) som delvis förklarar sambandet – utbildningsnivå är en bland flera faktorer.
 
 </div>
-`);
-
-    addMdToPage(`
----
-
-> 📍 **Fortsätt utforska:** Se ekonomiska faktorers påverkan på röstning → **Ekonomiska faktorer**
 `);
 
   }

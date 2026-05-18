@@ -5,26 +5,35 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
-  // ─── INTRO ───
+  // INTRO 
 
   addMdToPage(`
-# ⚖️ Unga vs Äldre Områden
+# Unga vs Äldre Områden
 
-> **Forskningsfråga:** *Hur skiljer sig röstningsmönster mellan kommuner med yngre respektive äldre befolkning?*
+<div style="
+  background:#F1F5F9;
+  padding:24px;
+  border-radius:12px;
+  margin-top:20px;
+  border-left:6px solid #192c4e;
+">
 
-> **Hypotes:** *Yngre områden (lägre medelålder) röstar i högre utsträckning på vänsterpartier än äldre områden.*
+<strong>Forskningsfråga:</strong> Hur skiljer sig röstningsmönster mellan kommuner med yngre respektive äldre befolkning?<br><br>
+<strong>Hypotes:</strong> Yngre områden (lägre medelålder) röstar i högre utsträckning på vänsterpartier än äldre områden.<br><br>
 
 Denna sida testar vår hypotes genom att dela in Sveriges kommuner i två grupper –
-**unga områden** (lägre medelålder än medianen) och **äldre områden** (högre medelålder än medianen) –
+<strong>unga områden</strong> (lägre medelålder än medianen) och <strong>äldre områden</strong> (högre medelålder än medianen) –
 och jämföra deras röstningsmönster.
+
+</div>
 `);
 
-  // ─── DROPDOWNS ───
+  // DROPDOWNS 
 
   let valtAr = addDropdown("Välj valår:", ["2018", "2022"]);
   let valtKon = addDropdown("Åldersdata – kön:", ["Totalt", "Män", "Kvinnor"]);
 
-  // ─── HJÄLPFUNKTIONER ───
+  // HJÄLPFUNKTIONER 
 
   function konNyckel(val) {
     const map = { "Totalt": "totalt", "Män": "män", "Kvinnor": "kvinnor" };
@@ -36,7 +45,6 @@ och jämföra deras röstningsmönster.
     return match ? match.lan : "Okänt län";
   }
 
-  // Rensa och normalisera valdata från Neo4j
   function rensaValdata(raw) {
     if (!raw) return [];
     if (Array.isArray(raw)) {
@@ -65,7 +73,6 @@ och jämföra deras röstningsmönster.
     return [];
   }
 
-  // Statistiska hjälpfunktioner
   function mean(arr) {
     if (!arr.length) return 0;
     return arr.reduce((a, b) => a + b, 0) / arr.length;
@@ -87,7 +94,6 @@ och jämföra deras röstningsmönster.
     return Math.sqrt(variance);
   }
 
-  // Enkelt tvåsidigt t-test (Welch)
   function ttest2(arr1, arr2) {
     if (arr1.length < 2 || arr2.length < 2) return null;
     let m1 = mean(arr1);
@@ -99,25 +105,20 @@ och jämföra deras röstningsmönster.
     let se = Math.sqrt((s1 * s1) / n1 + (s2 * s2) / n2);
     if (se === 0) return null;
     let t = (m1 - m2) / se;
-    // Welch-Satterthwaite frihetsgrader (approximation)
-    let df = Math.pow((s1 * s1) / n1 + (s2 * s2) / n2, 2) /
-      (Math.pow((s1 * s1) / n1, 2) / (n1 - 1) + Math.pow((s2 * s2) / n2, 2) / (n2 - 1));
-    // Approximera p-värde via t-fördelning (normal-approximation för stora stickprov)
-    let absT = Math.abs(t);
-    // Använda normal-approximation: p ≈ 2 * (1 - Φ(|t|))
+
     function normalCDF(z) {
       let t2 = 1 / (1 + 0.2316419 * Math.abs(z));
       let d = 0.3989423 * Math.exp(-z * z / 2);
       let p = d * t2 * (0.3193815 + t2 * (-0.3565638 + t2 * (1.7814779 + t2 * (-1.8212560 + t2 * 1.3302744))));
       return z > 0 ? 1 - p : p;
     }
-    let pValue = 2 * (1 - normalCDF(absT));
-    return { tValue: t, df, pValue };
+
+    let pValue = 2 * (1 - normalCDF(Math.abs(t)));
+    return { tValue: t, pValue };
   }
 
-  // ─── BYGG ÅLDERSDATA PER KOMMUN ───
+  // BYGG ÅLDERSDATA 
 
-  // Filtrera på valt kön, hämta medelålder per kommun
   let filtreradAges = ages.filter(a => a.kon === konNyckel(valtKon));
 
   let kommunAlderMap = new Map();
@@ -133,38 +134,44 @@ och jämföra deras röstningsmönster.
     kommunAlderMap.get(rad.kommun).push(alder);
   });
 
-  // Genomsnittlig medelålder per kommun (om flera rader)
   let kommunAlderData = new Map();
   kommunAlderMap.forEach((aldrar, kommun) => {
     let snitt = aldrar.reduce((a, b) => a + b, 0) / aldrar.length;
     kommunAlderData.set(kommun, snitt);
   });
 
-  // ─── RENSA VALDATA ───
+  // RENSA VALDATA
 
   let rensadeVal = rensaValdata(electionResults);
 
-  // ─── BERÄKNA MEDIANÅLDER OCH DELA IN GRUPPER ───
+  // MEDIAN 
 
   let allaAldrar = Array.from(kommunAlderData.values()).filter(v => v > 0);
   if (!allaAldrar.length) {
-    addMdToPage(`> ⚠️ Ingen åldersdata hittades för vald kombination.`);
+    addMdToPage(`> Ingen åldersdata hittades för vald kombination.`);
   } else {
 
     let medianAlder = median(allaAldrar);
 
     addMdToPage(`
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-<h3 style="color: white; margin-top: 0;">🔬 Hypotestestning</h3>
-<p style="font-size: 1.1em;">
-<strong>Hypotes:</strong> Yngre områden röstar mer vänster än äldre områden<br>
+<div style="
+  background:#F1F5F9;
+  padding:24px;
+  border-radius:12px;
+  margin:20px 0;
+  border-left:6px solid #192c4e;
+">
+
+<h3>Hypotestestning</h3>
+
+<strong>Hypotes:</strong> Yngre områden röstar mer vänster än äldre områden.<br>
 <strong>Metod:</strong> Dela kommuner i två grupper baserat på medianålder (${medianAlder.toFixed(1)} år)<br>
 <strong>Valår:</strong> ${valtAr}
-</p>
+
 </div>
 `);
 
-    // ─── BYGG DATA PER KOMMUN MED PARTIRESULTAT ───
+    // BYGG KOMMUNDATA
 
     let unikaKommuner = [...new Set(rensadeVal.map(v => v.kommun))];
     let kommunData = [];
@@ -196,20 +203,14 @@ och jämföra deras röstningsmönster.
       });
     });
 
-    // ─── DELA UPP I GRUPPER ───
-
     let ungaOmraden = kommunData.filter(d => d.grupp === "Unga områden");
     let aldreOmraden = kommunData.filter(d => d.grupp === "Äldre områden");
 
     if (!ungaOmraden.length || !aldreOmraden.length) {
-      addMdToPage(`> ⚠️ Otillräckligt underlag för att jämföra grupper. Prova ett annat år eller kön.`);
+      addMdToPage(`> Otillräckligt underlag för att jämföra grupper.`);
     } else {
 
-      // ─── HÄMTA ALLA PARTIER I DATAN ───
-
       let allaParter = [...new Set(rensadeVal.map(v => v.parti))].sort();
-
-      // ─── BERÄKNA MEDELVÄRDEN PER GRUPP OCH PARTI ───
 
       function beraknaMedelPartistod(data, parti) {
         let varden = data.map(d => d[parti] || 0).filter(v => v > 0);
@@ -227,12 +228,10 @@ och jämföra deras röstningsmönster.
         };
       });
 
-      // ─── DIAGRAM 1: JÄMFÖRELSE STAPEL ───
+      // DIAGRAM 1
 
       addMdToPage(`
-## 📊 Partistöd: Unga vs Äldre områden
-
-Följande grupperade stapeldiagram jämför medelstödet för varje parti mellan unga och äldre områden.
+## Partistöd: Unga vs Äldre områden
 `);
 
       drawGoogleChart({
@@ -241,7 +240,7 @@ Följande grupperade stapeldiagram jämför medelstödet för varje parti mellan
         options: {
           height: 500,
           chartArea: { left: 60, right: 20, top: 40, bottom: 100 },
-          colors: ["#3498db", "#e74c3c"],
+          colors: ["#1e3a5f", "#9ca3af"],
           hAxis: { title: "Parti", slantedText: true, slantedTextAngle: 30 },
           vAxis: { title: "Medelstöd (%)", minValue: 0 },
           title: `Partistöd: Unga vs Äldre områden – ${valtAr}`,
@@ -250,18 +249,10 @@ Följande grupperade stapeldiagram jämför medelstödet för varje parti mellan
         }
       });
 
-      addMdToPage(`
-**Analys:** Diagrammet visar tydliga skillnader mellan grupperna.
-Vänsterpartier och Miljöpartiet tenderar att ha högre stöd i yngre områden,
-medan Kristdemokraterna och Moderaterna ofta är starkare i äldre kommuner.
-`);
-
-      // ─── DIAGRAM 2: SKILLNAD (UNGA – ÄLDRE) ───
+      // DIAGRAM 2
 
       addMdToPage(`
-## 📈 Skillnad i partistöd (Unga – Äldre områden)
-
-Positiva värden = partiet är starkare i unga områden. Negativa värden = starkare i äldre områden.
+## Skillnad i partistöd (Unga – Äldre områden)
 `);
 
       let skillnadData = jamforelseData.map(d => ({ parti: d.parti, skillnad: d.skillnad }));
@@ -272,7 +263,7 @@ Positiva värden = partiet är starkare i unga områden. Negativa värden = star
         options: {
           height: 450,
           chartArea: { left: 240, right: 60, top: 40, bottom: 60 },
-          colors: ["#9b59b6"],
+          colors: ["#1e3a5f"],
           legend: { position: "none" },
           hAxis: { title: "Skillnad (procentenheter)" },
           vAxis: { title: "Parti" },
@@ -281,15 +272,12 @@ Positiva värden = partiet är starkare i unga områden. Negativa värden = star
         }
       });
 
-      // ─── STATISTISK TESTNING (T-TEST) ───
+      // STATISTISK TESTNING 
 
       addMdToPage(`
-## 🧪 Statistisk testning av hypotesen
-
-Vi testar hypotesen med ett **t-test** för att se om skillnaden är statistiskt signifikant.
+## Statistisk testning av hypotesen
 `);
 
-      // Vänsterblock (med fullt partynamn)
       let vansterBlock = [
         "Socialdemokraterna",
         "Arbetarepartiet-Socialdemokraterna",
@@ -310,27 +298,34 @@ Vi testar hypotesen med ett **t-test** för att se om skillnaden är statistiskt
       let tTestResultat = ttest2(ungaVanster, aldreVanster);
 
       addMdToPage(`
-<div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #28a745; margin: 20px 0;">
-<h4>📐 T-test-resultat (Vänsterblocket)</h4>
-<table style="border: none; width: 100%;">
-<tr><td style="border: none;"><strong>Unga områden – medelstöd vänster:</strong></td><td style="border: none; text-align: right;">${ungaVansterMedel.toFixed(2)}%</td></tr>
-<tr><td style="border: none;"><strong>Äldre områden – medelstöd vänster:</strong></td><td style="border: none; text-align: right;">${aldreVansterMedel.toFixed(2)}%</td></tr>
-<tr><td style="border: none;"><strong>Skillnad:</strong></td><td style="border: none; text-align: right;">${(ungaVansterMedel - aldreVansterMedel).toFixed(2)} procentenheter</td></tr>
+<div style="
+  background:#F1F5F9;
+  padding:24px;
+  border-radius:12px;
+  margin:20px 0;
+  border-left:6px solid #192c4e;
+">
+
+<h4>T-test-resultat (Vänsterblocket)</h4>
+
+<table style="border:none; width:100%;">
+<tr><td>Unga områden – medelstöd vänster:</td><td style="text-align:right;">${ungaVansterMedel.toFixed(2)}%</td></tr>
+<tr><td>Äldre områden – medelstöd vänster:</td><td style="text-align:right;">${aldreVansterMedel.toFixed(2)}%</td></tr>
+<tr><td>Skillnad:</td><td style="text-align:right;">${(ungaVansterMedel - aldreVansterMedel).toFixed(2)} procentenheter</td></tr>
 ${tTestResultat
-    ? `<tr><td style="border: none;"><strong>p-värde (approx.):</strong></td><td style="border: none; text-align: right;">${tTestResultat.pValue.toFixed(4)}</td></tr>
-<tr><td style="border: none;"><strong>Signifikansnivå (α = 0.05):</strong></td><td style="border: none; text-align: right;">${tTestResultat.pValue < 0.05 ? "✅ SIGNIFIKANT" : "❌ Ej signifikant"}</td></tr>`
-    : "<tr><td style=\"border: none;\" colspan=\"2\"><em>T-test kunde inte utföras (otillräcklig data)</em></td></tr>"
+    ? `<tr><td>p-värde (approx.):</td><td style="text-align:right;">${tTestResultat.pValue.toFixed(4)}</td></tr>
+<tr><td>Signifikansnivå (α = 0.05):</td><td style="text-align:right;">${tTestResultat.pValue < 0.05 ? "Signifikant" : "Ej signifikant"}</td></tr>`
+    : "<tr><td colspan='2'><em>T-test kunde inte utföras (otillräcklig data)</em></td></tr>"
 }
 </table>
+
 </div>
 `);
 
-      // ─── TABELL: DETALJERAD JÄMFÖRELSE PER PARTI ───
+      // DETALJERAD TABELL 
 
       addMdToPage(`
-## 📋 Detaljerad jämförelse per parti
-
-Medelstöd, standardavvikelse och skillnad per parti i båda grupperna.
+## Detaljerad jämförelse per parti
 `);
 
       let detaljTabell = allaParter.map(parti => {
@@ -355,61 +350,27 @@ Medelstöd, standardavvikelse och skillnad per parti i båda grupperna.
       });
 
       addMdToPage(`
-**Förklaring:** Std.avv. visar spridningen inom gruppen.
-En hög standardavvikelse indikerar stor variation mellan kommuner inom samma åldersgrupp.
+**Förklaring:** Standardavvikelse visar spridningen inom gruppen. En hög standardavvikelse indikerar stor variation mellan kommuner inom samma åldersgrupp.
 `);
 
-      // ─── MYTH BUSTING: HYPOTESPRÖVNING ───
-
-      let hypotesBekraftad = ungaVansterMedel > aldreVansterMedel &&
-        tTestResultat && tTestResultat.pValue < 0.05;
+      // INSIGHT 
 
       addMdToPage(`
-## 🎯 Myth Busting – Resultat av hypotesprövning
+<div style="
+  background:#F1F5F9;
+  padding:24px;
+  border-radius:12px;
+  margin:30px 0;
+  border-left:6px solid #192c4e;
+">
 
-<div style="background: ${hypotesBekraftad
-        ? "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)"
-        : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"}; color: white; padding: 25px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-<h3 style="color: white; margin-top: 0;">${hypotesBekraftad ? "✅ HYPOTES BEKRÄFTAD" : "⚠️ HYPOTES DELVIS BEKRÄFTAD / MOTBEVISAD"}</h3>
-<p style="font-size: 1.15em; line-height: 1.6;">
-<strong>Hypotes:</strong> "Yngre områden röstar mer vänster än äldre områden"
-</p>
-<p style="font-size: 1.1em; line-height: 1.6;">
-${hypotesBekraftad
-        ? `Resultaten stödjer hypotesen. Unga områden har signifikant högre stöd för vänsterblocket (${ungaVansterMedel.toFixed(1)}% vs ${aldreVansterMedel.toFixed(1)}%). Skillnaden är statistiskt signifikant (p < 0.05).`
-        : `Resultaten visar att unga områden har ${ungaVansterMedel > aldreVansterMedel ? "något" : "inte"} högre stöd för vänsterblocket (${ungaVansterMedel.toFixed(1)}% vs ${aldreVansterMedel.toFixed(1)}%). ${tTestResultat && tTestResultat.pValue >= 0.05 ? "Skillnaden är dock inte statistiskt signifikant (p ≥ 0.05), vilket innebär att vi inte kan utesluta slumpen som förklaring." : ""}`
-      }
-</p>
+<h3>Insikt: Demografi formar politik – men inte ensamt</h3>
+
+Det finns ett samband mellan åldersstruktur och politiska preferenser,
+men sambandet är komplext. Det är inte bara ålder som spelar roll – utbildning,
+inkomst och geografisk tillhörighet är också viktiga faktorer.
+
 </div>
-
-### Möjliga förklaringar till resultatet:
-
-1. **Livscykel-hypotesen:** Människor blir mer konservativa med ålder – stödet för förändring minskar.
-2. **Kohort-effekten:** Dagens unga växte upp med andra samhällsfrågor (klimat, jämställdhet) än dagens äldre.
-3. **Urbanisering:** Yngre bor i städer där vänsterpartier traditionellt är starkare.
-4. **Utbildning:** Yngre generationer har högre utbildningsnivå, vilket korrelerar med vissa partiers stöd.
-`);
-
-      // ─── INSIGHT-BOX: SLUTSATS ───
-
-      addMdToPage(`
-<div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 12px; margin: 30px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-<h3 style="color: white; margin-top: 0;">💡 Insikt: Demografi formar politik – men inte ensamt</h3>
-<p style="font-size: 1.1em; line-height: 1.6;">
-Vår hypotesprövning visar att det finns ett samband mellan åldersstruktur och politiska preferenser,
-men att sambandet är komplext. Det är inte bara ålder som spelar roll – utbildning, inkomst och
-geografisk tillhörighet är minst lika viktiga faktorer.
-</p>
-<p style="font-size: 1.1em; line-height: 1.6;">
-<strong>Nästa steg:</strong> På sidan <strong>Utbildning</strong> undersöker vi hur utbildningsnivå påverkar röstning.
-</p>
-</div>
-`);
-
-      addMdToPage(`
----
-
-> 📍 **Fortsätt utforska:** Se hur utbildning påverkar röstning → **Utbildning**
 `);
 
     }
