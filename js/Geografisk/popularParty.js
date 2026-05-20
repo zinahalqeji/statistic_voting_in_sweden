@@ -2,6 +2,28 @@ import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 
 const parties = ["S", "M", "SD", "V", "C", "KD", "L", "MP"];
 
+const partyColors = {
+  S: "#E4003B",
+  M: "#1B66AE",
+  SD: "#DDCC00",
+  V: "#9B1D20",
+  C: "#009933",
+  KD: "#005F8D",
+  L: "#006AB3",
+  MP: "#83CF39"
+};
+
+const partyNames = {
+  S: "Socialdemokraterna",
+  M: "Moderaterna",
+  SD: "Sverigedemokraterna",
+  V: "Vänsterpartiet",
+  C: "Centerpartiet",
+  KD: "Kristdemokraterna",
+  L: "Liberalerna",
+  MP: "Miljöpartiet"
+};
+
 function toNumber(value) {
   const num = Number(String(value || 0).replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(num) ? num : 0;
@@ -11,11 +33,39 @@ function formatVotes(value) {
   return `${Math.round(value).toLocaleString("sv-SE")} röster`;
 }
 
+// Visar förändring i röster med + eller − framför, aldrig "röster" på negativa tal utan tecken
+function formatVoteChange(value) {
+  const abs = Math.abs(Math.round(value)).toLocaleString("sv-SE");
+  if (value > 0) return "+" + abs + " röster";
+  if (value < 0) return "-" + abs + " röster";
+  return "0 röster";
+} röster`;
+  if (value < 0) return `\u2212${ abs; } röster`;
+  return `±0 röster`;
+}
+
 function formatPercent(value) {
-  return `${value.toLocaleString("sv-SE", {
+  return `${
+  value.toLocaleString("sv-SE", {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1
-  })} %`;
+  });
+} % `;
+}
+
+// Visar förändring i procentenheter med + eller − (äkta minustecken) framför
+function formatPE(value) {
+  const abs = Math.abs(value).toLocaleString("sv-SE", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+  if (value > 0) return "+" + abs + " pe";
+  if (value < 0) return "-" + abs + " pe";
+  return "0,0 pe";
+});
+  if (value > 0) return `+ ${ abs; } pe`;
+  if (value < 0) return `\u2212${ abs; } pe`;
+  return `±0, 0 pe`;
 }
 
 function totalVotes(row) {
@@ -25,16 +75,13 @@ function totalVotes(row) {
 function findBiggestParty(row) {
   let biggestParty = "";
   let maxVotes = 0;
-
   parties.forEach(party => {
     const votes = toNumber(row[party]);
-
     if (votes > maxVotes) {
       maxVotes = votes;
       biggestParty = party;
     }
   });
-
   return {
     party: biggestParty,
     votes: maxVotes,
@@ -42,35 +89,52 @@ function findBiggestParty(row) {
   };
 }
 
+function partyBadge(partyKey, label) {
+  return `
+  < div style = "display:flex; align-items:center; gap:12px; margin:12px 0 8px 0;" >
+      <div style="
+        width:44px; height:44px; border-radius:50%;
+        background:${partyColors[partyKey]};
+        display:flex; align-items:center; justify-content:center;
+        font-weight:700; font-size:15px; color:#fff; flex-shrink:0;">
+        ${partyKey}
+      </div>
+      <span style="font-size:16px; font-weight:500; color:#222;">${label}</span>
+    </div >
+  `;
+}
+
 function statCards(cards) {
   return `
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin:20px 0 24px 0;">
-      ${cards.map(card => `
+  < div style = "display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin:20px 0 24px 0;" >
+    ${
+      cards.map(card => `
         <div style="background:white; padding:20px; border-radius:8px; min-height:118px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
           <h3 style="margin:0 0 10px 0; font-size:19px;">${card.title}</h3>
           <p style="font-size:23px; font-weight:bold; margin:0 0 6px 0;">${card.value}</p>
           ${card.note ? `<p style="font-size:14px; margin:0; color:#555;">${card.note}</p>` : ""}
         </div>
-      `).join("")}
-    </div>
+      `).join("");
+}
+    </div >
   `;
 }
 
 function infoBox(title, text) {
   return `
-    <div style="background:#ffffff; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:20px 0 24px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+  < div style = "background:#ffffff; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:20px 0 24px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);" >
       <h3 style="margin:0 0 10px 0; font-size:19px;">${title}</h3>
       <p style="margin:0; line-height:1.75; font-size:16px;">${text}</p>
-    </div>
+    </div >
   `;
 }
 
 function loadingBox() {
   return `
-    <div id="loading-message" style="background:white; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:22px 0;">
+  < div id = "loading-message" style = "background:white; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:22px 0;" >
       <h3 style="margin:0 0 8px 0;">Laddar analysen...</h3>
       <p style="margin:0;">Hämtar valresultat från 2018 och 2022.</p>
-    </div>
+    </div >
   `;
 }
 
@@ -79,30 +143,93 @@ function removeLoadingBox() {
   if (el) el.remove();
 }
 
-addMdToPage(`
-# Populäraste parti geografiskt
+function geographicAnalysis(county, biggest2018, biggest2022, biggestIncrease, biggestDecrease) {
+  const sameParty = biggest2018.party === biggest2022.party;
+  const dominantParty = biggest2022.party;
+  const dominantName = partyNames[dominantParty];
 
-Här undersöker vi vilket parti som är störst i olika län och hur rösterna förändrades mellan riksdagsvalen 2018 och 2022.
+  let stabilityText = "";
+  if (sameParty) {
+    stabilityText = `I < strong > ${ county; }</strong > var <strong>${partyNames[biggest2018.party]}</strong> störst
+    i båda valen.Detta tyder på ett stabilt röstningsmönster i länet – väljarna har i stor utsträckning
+    behållit sina partisympatier mellan 2018 och 2022.`;
+  } else {
+    stabilityText = `I < strong > ${ county; }</strong > bytte det största partiet från
+  < strong > ${ partyNames[biggest2018.party]; }</strong > år 2018 till
+    < strong > ${ partyNames[biggest2022.party]; }</strong > år 2022. Detta är en tydlig politisk förändring
+    i länet och värd att undersöka närmare.`;
+  }
 
-## Fråga
-**Vilket parti är störst i olika delar av Sverige, och hur varierar det geografiskt?**
+  let partyContext = "";
+  if (dominantParty === "S") {
+    partyContext = `Socialdemokraterna är traditionellt starka i norra Sverige, i industrikommuner och
+    i områden med hög andel arbetare och LO - anslutna.Ett S - dominerat län speglar ofta en stark
+    facklig tradition och ett historiskt band mellan rörelsen och väljarna.`;
+  } else if (dominantParty === "M") {
+    partyContext = `Moderaterna är traditionellt starka i södra Sverige, i välbärgade förorter och
+    i storstadsregioner med hög andel tjänstemän och företagare.Ett M - dominerat län speglar ofta
+    höga inkomstnivåer och en stark borgerlig tradition.`;
+  } else if (dominantParty === "SD") {
+    partyContext = `Sverigedemokraterna har vuxit kraftigt sedan 2010 - talet och är idag störst i
+    flera sydsvenska och mellansvenska län.Partiet är ofta starkt i områden med lägre medianinkomst,
+  högre arbetslöshet och där frågor om trygghet och invandring väger tungt hos väljarna.`;
+  } else if (dominantParty === "C") {
+    partyContext = `Centerpartiet är traditionellt starkast på landsbygden och i glesbygdslän,
+  där jordbruk, lokal service och landsbygdspolitik är centrala frågor.Ett C - dominerat län
+    speglar ofta en stark agrartradition och glesbefolkade kommuner.`;
+  } else {
+    partyContext = `${ dominantName; } är det dominerande partiet i detta län, vilket speglar
+    länets specifika socioekonomiska och demografiska sammansättning.`;
+  }
 
-**Enheter:** röster anges i **antal röster** och röstandel anges i **procent (%)**.
-`);
+  const increaseText = `Partiet med störst ökning i antal röster var;
+<strong>${partyNames[biggestIncrease.Parti]}</strong> med ${ formatVoteChange(biggestIncrease.changeVotes); }
+  och en förändring på ${ formatPE(biggestIncrease.changeShare); }.`;
 
-addToPage(infoBox(
+  const decreaseText = `Partiet med störst minskning var;
+<strong>${partyNames[biggestDecrease.Parti]}</strong> med ${ formatVoteChange(biggestDecrease.changeVotes); }
+  och en förändring på ${ formatPE(biggestDecrease.changeShare); }.`;
+
+  const causeText = `Det är viktigt att notera att röstförändringar inte nödvändigtvis beror på att
+  enskilda väljare bytt parti.Förändringar kan också bero på att olika grupper röstar i olika
+  utsträckning mellan valen, att nya väljare tillkommer(unga som fyller 18) eller att väljare
+  väljer att inte rösta alls.`;
+
+  return `${ stabilityText; } <br><br>${partyContext}<br><br>${increaseText}${decreaseText}<br><br>${causeText}`;
+}
+
+  addMdToPage(`
+  # Populäraste parti geografiskt
+
+  Här undersöker vi vilket parti som är störst i olika län och hur rösterna förändrades mellan riksdagsvalen 2018 och 2022.
+
+  ## Undersökningsfrågor
+
+  **1. Vilket parti är störst i olika delar av Sverige?**
+
+  **2. Varierar det populäraste partiet geografiskt mellan norr och söder?**
+
+  **3. Har det dominerande partiet förändrats mellan 2018 och 2022?**
+
+  **Enheter:**
+  - Antal röster anges i **antal röster** – det faktiska antalet röster partiet fick i länet.
+  - Röstandel anges i **procent (%)** – partiets andel av rösterna bland de åtta riksdagspartierna.
+  - Förändring i röstandel anges i **procentenheter (pe)** – skillnaden mellan 2022 och 2018 i procenttal.
+  `);
+
+  addToPage(infoBox(
   "Analysens hypotes",
-  "Vår hypotes är att det populäraste partiet varierar mellan olika län. Genom att välja ett län i dropdown-menyn kan vi se vilket parti som var störst 2018 och 2022 samt hur rösterna förändrats."
-));
+  "Vår hypotes är att det populäraste partiet varierar tydligt mellan olika delar av Sverige. Vi förväntar oss att Socialdemokraterna dominerar i norra Sverige och i industrilän, medan Moderaterna är starka i södra Sverige och storstadsregioner. Vi undersöker också om Sverigedemokraternas tillväxt syns tydligt i vissa län och om något län bytte dominerande parti mellan 2018 och 2022."
+  ));
 
-addToPage(loadingBox());
+  addToPage(loadingBox());
 
-if (!dbInfoOk) {
-  removeLoadingBox();
+  if (!dbInfoOk) {
+    removeLoadingBox();
   displayDbNotOkText();
 }
-else {
-  dbQuery.use("undersokning_2018");
+  else {
+    dbQuery.use("undersokning_2018");
   const data2018 = await dbQuery("SELECT * FROM roster_2018");
 
   dbQuery.use("undersokning_2022");
@@ -121,163 +248,176 @@ else {
   const row2022 = data2022.find(row => row.Omrade === chosenCounty);
 
   if (!row2018 || !row2022) {
-    addMdToPage(`
-## Resultat
-
-Det saknas data för det valda länet.
-`);
+    addMdToPage(`## Resultat\n\nDet saknas data för det valda länet.`);
   }
   else {
     const biggest2018 = findBiggestParty(row2018);
-    const biggest2022 = findBiggestParty(row2022);
+  const biggest2022 = findBiggestParty(row2022);
 
-    const total2018 = totalVotes(row2018);
-    const total2022 = totalVotes(row2022);
+  const total2018 = totalVotes(row2018);
+  const total2022 = totalVotes(row2022);
 
     const partyComparison = parties.map(party => {
       const votes2018 = toNumber(row2018[party]);
-      const votes2022 = toNumber(row2022[party]);
-
-      return {
-        Parti: party,
-        votes2018,
-        votes2022,
-        share2018: total2018 > 0 ? (votes2018 / total2018) * 100 : 0,
-        share2022: total2022 > 0 ? (votes2022 / total2022) * 100 : 0,
-        changeVotes: votes2022 - votes2018,
-        changeShare: total2022 > 0 && total2018 > 0
-          ? (votes2022 / total2022) * 100 - (votes2018 / total2018) * 100
-          : 0
+  const votes2022 = toNumber(row2022[party]);
+      const share2018 = total2018 > 0 ? (votes2018 / total2018) * 100 : 0;
+      const share2022 = total2022 > 0 ? (votes2022 / total2022) * 100 : 0;
+  return {
+    Parti: party,
+  votes2018,
+  votes2022,
+  share2018,
+  share2022,
+  changeVotes: votes2022 - votes2018,
+  changeShare: share2022 - share2018
       };
     });
 
     const biggestIncrease = [...partyComparison].sort((a, b) => b.changeVotes - a.changeVotes)[0];
     const biggestDecrease = [...partyComparison].sort((a, b) => a.changeVotes - b.changeVotes)[0];
 
-    addMdToPage(`
-## Resultat för ${chosenCounty}
-`);
+  addMdToPage(`## Resultat för ${chosenCounty}`);
 
-    addToPage(statCards([
-      {
-        title: "Största parti 2018",
-        value: biggest2018.party,
-        note: `${formatVotes(biggest2018.votes)} / ${formatPercent(biggest2018.share)}`
+  addToPage(statCards([
+  {
+    title: "Största parti 2018",
+  value: biggest2018.party,
+  note: `${formatVotes(biggest2018.votes)} – ${formatPercent(biggest2018.share)}`
       },
-      {
-        title: "Största parti 2022",
-        value: biggest2022.party,
-        note: `${formatVotes(biggest2022.votes)} / ${formatPercent(biggest2022.share)}`
+  {
+    title: "Största parti 2022",
+  value: biggest2022.party,
+  note: `${formatVotes(biggest2022.votes)} – ${formatPercent(biggest2022.share)}`
       },
-      {
-        title: "Förändring",
-        value: biggest2018.party === biggest2022.party ? "Samma parti" : "Bytte parti",
-        note: `${biggest2018.party} → ${biggest2022.party}`
+  {
+    title: "Förändring",
+  value: biggest2018.party === biggest2022.party ? "Samma parti" : "Bytte parti",
+  note: `${biggest2018.party} → ${biggest2022.party}`
       },
-      {
-        title: "Störst ökning",
-        value: biggestIncrease.Parti,
-        note: formatVotes(biggestIncrease.changeVotes)
+  {
+    title: "Störst ökning",
+  value: biggestIncrease.Parti,
+  note: formatVoteChange(biggestIncrease.changeVotes)
       }
-    ]));
+  ]));
 
-    addMdToPage(`
-## Röster per parti
+  addMdToPage(`
+  ## Röstandel per parti – 2018
 
-Diagrammet visar hur många röster varje parti fick i **${chosenCounty}** år 2018 och 2022.
-`);
+  Diagrammet visar varje partis röstandel i **procent (%)** år 2018. Varje parti har sin egna färg. Röstandel är ett bättre mått än antal röster när man jämför partier, eftersom det visar partiets relativa styrka oavsett hur många som röstade totalt.
+  `);
 
-    drawGoogleChart({
-      type: "ColumnChart",
-      data: [
-        ["Parti", "2018", "2022"],
+  addToPage(partyBadge(biggest2018.party, `Störst 2018: ${partyNames[biggest2018.party]}`));
+
+  drawGoogleChart({
+    type: "ColumnChart",
+  data: [
+  ["Parti", "Röstandel 2018 (%)", {role: "style" }],
         ...partyComparison.map(row => [
-          row.Parti,
-          row.votes2018,
-          row.votes2022
-        ])
-      ],
-      options: {
-        title: `Röster per parti i ${chosenCounty}, 2018 jämfört med 2022`,
-        height: 520,
-        chartArea: { width: "80%", height: "70%" },
-        vAxis: {
-          title: "Antal röster"
-        },
-        hAxis: {
-          title: "Parti"
-        }
+  row.Parti,
+  row.share2018,
+  `color: ${partyColors[row.Parti]}`
+  ])
+  ],
+  options: {
+    title: `Röstandel per parti i ${chosenCounty} – 2018 (%)`,
+  height: 520,
+  chartArea: {width: "80%", height: "70%" },
+  vAxis: {title: "Röstandel (%)", viewWindow: {min: 0 } },
+  hAxis: {title: "Parti" },
+  legend: "none"
       }
     });
 
-    addMdToPage(`
-## Röstandel per parti
+  addMdToPage(`
+  ## Röstandel per parti – 2022
 
-Diagrammet visar partiernas röstandel i **procent (%)**. Detta gör jämförelsen tydligare eftersom antal röster påverkas av hur många personer som röstade.
-`);
+  Diagrammet visar varje partis röstandel år 2022. Jämför med 2018-diagrammet ovanför för att se hur partierna förändrats. Varje parti har sin egna färg.
+  `);
 
-    drawGoogleChart({
-      type: "ColumnChart",
-      data: [
-        ["Parti", "2018 (%)", "2022 (%)"],
+  addToPage(partyBadge(biggest2022.party, `Störst 2022: ${partyNames[biggest2022.party]}`));
+
+  drawGoogleChart({
+    type: "ColumnChart",
+  data: [
+  ["Parti", "Röstandel 2022 (%)", {role: "style" }],
         ...partyComparison.map(row => [
-          row.Parti,
-          row.share2018,
-          row.share2022
-        ])
-      ],
-      options: {
-        title: `Röstandel per parti i ${chosenCounty}, 2018 jämfört med 2022`,
-        height: 520,
-        chartArea: { width: "80%", height: "70%" },
-        vAxis: {
-          title: "Röstandel (%)",
-          viewWindow: { min: 0 }
-        },
-        hAxis: {
-          title: "Parti"
-        }
+  row.Parti,
+  row.share2022,
+  `color: ${partyColors[row.Parti]}`
+  ])
+  ],
+  options: {
+    title: `Röstandel per parti i ${chosenCounty} – 2022 (%)`,
+  height: 520,
+  chartArea: {width: "80%", height: "70%" },
+  vAxis: {title: "Röstandel (%)", viewWindow: {min: 0 } },
+  hAxis: {title: "Parti" },
+  legend: "none"
       }
     });
 
-    addMdToPage(`
-## Tabell: jämförelse mellan 2018 och 2022
-`);
+  addMdToPage(`
+  ## Förändring i procentenheter 2018–2022
 
-    tableFromData({
-      data: partyComparison.map(row => ({
-        Parti: row.Parti,
-        "Röster 2018 (antal)": formatVotes(row.votes2018),
-        "Röster 2022 (antal)": formatVotes(row.votes2022),
-        "Förändring röster (antal)": formatVotes(row.changeVotes),
-        "Röstandel 2018 (%)": formatPercent(row.share2018),
-        "Röstandel 2022 (%)": formatPercent(row.share2022),
-        "Förändring procentenheter": formatPercent(row.changeShare)
+  Diagrammet visar hur mycket varje partis röstandel förändrades mellan 2018 och 2022, mätt i **procentenheter (pe)**. En stapel ovanför nolllinjen betyder att partiet ökade sin andel – en stapel under nolllinjen betyder att det minskade. Varje parti har sin egna färg.
+  `);
+
+  drawGoogleChart({
+    type: "ColumnChart",
+  data: [
+  ["Parti", "Förändring (pe)", {role: "style" }],
+        ...partyComparison.map(row => [
+  row.Parti,
+  row.changeShare,
+  `color: ${partyColors[row.Parti]}`
+  ])
+  ],
+  options: {
+    title: `Förändring i röstandel per parti i ${chosenCounty} – 2018 till 2022 (pe)`,
+  height: 520,
+  chartArea: {width: "80%", height: "70%" },
+  vAxis: {title: "Förändring (procentenheter)" },
+  hAxis: {title: "Parti" },
+  legend: "none"
+      }
+    });
+
+  addMdToPage(`
+  ## Tabell: jämförelse 2018 och 2022
+
+  Tabellen visar både antal röster och röstandel för varje parti. Förändring i röstandel anges i **procentenheter (pe)**. Ett positivt värde betyder att partiet ökade sin andel, ett negativt att det minskade.
+  `);
+
+  tableFromData({
+    data: partyComparison.map(row => ({
+    Parti: row.Parti,
+  "Röster 2018": formatVotes(row.votes2018),
+  "Röster 2022": formatVotes(row.votes2022),
+  "Förändring röster": formatVoteChange(row.changeVotes),
+  "Andel 2018 (%)": formatPercent(row.share2018),
+  "Andel 2022 (%)": formatPercent(row.share2022),
+  "Förändring (pe)": formatPE(row.changeShare)
       }))
     });
 
-    addMdToPage(`
-## Kort analys
+  addToPage(infoBox(
+  `Analys – ${chosenCounty}`,
+  geographicAnalysis(chosenCounty, biggest2018, biggest2022, biggestIncrease, biggestDecrease)
+  ));
 
-I **${chosenCounty}** var **${biggest2018.party}** störst år 2018 och **${biggest2022.party}** störst år 2022.
+  addMdToPage(`
+  ## Metod och begränsningar
 
-Partiet med störst ökning i antal röster var **${biggestIncrease.Parti}**, med en förändring på **${formatVotes(biggestIncrease.changeVotes)}**. Partiet med störst minskning i antal röster var **${biggestDecrease.Parti}**, med en förändring på **${formatVotes(biggestDecrease.changeVotes)}**.
+  Analysen bygger på valresultat från tabellerna **roster_2018** och **roster_2022**.
 
-Om största parti är samma båda åren visar det att länet har haft ett relativt stabilt röstningsmönster. Om största parti har bytts ut tyder det på en tydligare politisk förändring i länet.
+  **Hur röstandel räknas ut:** Partiets röster divideras med summan av röster för S, M, SD, V, C, KD, L och MP i länet. Övriga partier och blankröster ingår inte i nämnaren – resultatet är därför bäst för att jämföra de åtta riksdagspartierna sinsemellan.
 
-## Metod och begränsning
+  **Hur förändring räknas ut:** Förändring i antal röster = röster 2022 minus röster 2018. Förändring i röstandel (pe) = röstandel 2022 minus röstandel 2018.
 
-Analysen bygger på valresultat från **roster_2018** och **roster_2022**. För det valda länet jämförs partiernas röster och röstandelar mellan de två valåren.
+  **Varför tre diagram?** Två separata diagram för 2018 och 2022 gör det lättare att se varje partis egna färg och relativa storlek. Det tredje diagrammet (förändring i pe) gör det enkelt att direkt se vilka partier som vann och vilka som tappade.
 
-**Antal röster** visar hur många röster ett parti fick. **Röstandel (%)** visar partiets andel av rösterna bland partierna S, M, SD, V, C, KD, L och MP.
-
-En begränsning är att röstandelen här beräknas utifrån dessa åtta partier, inte alla partier och blankröster. Resultatet är därför bäst för att jämföra de stora riksdagspartierna.
-
-## Extremvärden
-
-Stora län kan få stora förändringar i antal röster även om förändringen i procent är mindre. Därför är det viktigt att titta både på **antal röster** och **röstandel (%)**.
-
-Små skillnader mellan två partier kan också göra att största parti byts, trots att väljarnas beteende bara förändrats lite.
-`);
+  **Begränsningar:** Analysen visar data på länsnivå vilket kan dölja stora skillnader mellan kommuner inom samma län. Antal röster påverkas av valdeltagandet – om fler röstar totalt kan ett parti få fler röster men ändå tappa i procent. Röstandel (%) är därför ett bättre mått för att jämföra partiernas relativa styrka.
+  `);
   }
-}
+};
