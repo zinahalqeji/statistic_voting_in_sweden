@@ -12,7 +12,10 @@ function normalizeGender(value) {
 }
 
 function displayPartyName(party) {
-  const names = { "Arbetarepartiet-Socialdemokraterna": "Socialdemokraterna", "Miljöpartiet de gröna": "Miljöpartiet" };
+  const names = {
+    "Arbetarepartiet-Socialdemokraterna": "Socialdemokraterna",
+    "Miljöpartiet de gröna": "Miljöpartiet"
+  };
   return names[party] || party;
 }
 
@@ -41,20 +44,34 @@ function formatPercent(value) {
 
 function correlation(xs, ys) {
   if (xs.length !== ys.length || xs.length < 2) return null;
-  const avgX = average(xs), avgY = average(ys);
-  let numerator = 0, sumX = 0, sumY = 0;
+
+  const avgX = average(xs);
+  const avgY = average(ys);
+
+  let numerator = 0;
+  let sumX = 0;
+  let sumY = 0;
+
   for (let i = 0; i < xs.length; i++) {
-    const dx = xs[i] - avgX, dy = ys[i] - avgY;
-    numerator += dx * dy; sumX += dx * dx; sumY += dy * dy;
+    const dx = xs[i] - avgX;
+    const dy = ys[i] - avgY;
+
+    numerator += dx * dy;
+    sumX += dx * dx;
+    sumY += dy * dy;
   }
+
   const denominator = Math.sqrt(sumX * sumY);
   if (denominator === 0) return null;
+
   return numerator / denominator;
 }
 
 function correlationStrength(value) {
   if (value === null) return "kan inte beräknas";
+
   const abs = Math.abs(value);
+
   if (abs >= 0.5) return "starkt";
   if (abs >= 0.2) return "måttligt";
   return "svagt";
@@ -69,25 +86,45 @@ function correlationDirection(value) {
 
 function correlationLabel(value) {
   if (value === null) return "kan inte beräknas";
+
   const strength = correlationStrength(value);
   const direction = correlationDirection(value);
+
   if (direction === "inget tydligt") return "inget tydligt samband";
+
   return strength + " " + direction + " samband";
 }
 
 function describeCorrelation(value, party) {
   const partyName = displayPartyName(party);
-  if (value === null) return "Korrelationen kunde inte beräknas för " + partyName + " eftersom det saknas tillräckligt med data.";
+
+  if (value === null) {
+    return "Korrelationen kunde inte beräknas för " + partyName + " eftersom det saknas tillräckligt med data.";
+  }
+
   const strength = correlationStrength(value);
-  if (value > 0) return "Korrelationen är positiv — stödet för " + partyName + " tenderar att vara högre i kommuner med högre arbetslöshet. Sambandet är " + strength + ".";
-  if (value < 0) return "Korrelationen är negativ — stödet för " + partyName + " tenderar att vara lägre i kommuner med högre arbetslöshet. Sambandet är " + strength + ".";
-  return "Korrelationen är nära noll — inget tydligt linjärt samband mellan arbetslöshet och stöd för " + partyName + ".";
+
+  if (value > 0) {
+    return "Korrelationen är positiv - stödet för " + partyName + " tenderar att vara högre i kommuner med högre arbetslöshet. Sambandet är " + strength + ".";
+  }
+
+  if (value < 0) {
+    return "Korrelationen är negativ - stödet för " + partyName + " tenderar att vara lägre i kommuner med högre arbetslöshet. Sambandet är " + strength + ".";
+  }
+
+  return "Korrelationen är nära noll - inget tydligt linjärt samband mellan arbetslöshet och stöd för " + partyName + ".";
 }
 
 function hypothesisConclusion(value) {
-  if (value === null) return "Det går inte att avgöra om hypotesen får stöd i det valda urvalet.";
-  if (Math.abs(value) >= 0.2) return "Resultatet ger delvis stöd för hypotesen — arbetslöshet och partistöd samvarierar i det valda urvalet.";
-  return "Resultatet ger svagt stöd för hypotesen — sambandet mellan arbetslöshet och partistöd är litet.";
+  if (value === null) {
+    return "Det går inte att avgöra om hypotesen får stöd i det valda urvalet.";
+  }
+
+  if (Math.abs(value) >= 0.2) {
+    return "Resultatet ger delvis stöd för hypotesen - arbetslöshet och partistöd samvarierar i det valda urvalet.";
+  }
+
+  return "Resultatet ger svagt stöd för hypotesen - sambandet mellan arbetslöshet och partistöd är litet.";
 }
 
 function statCards(cards) {
@@ -115,6 +152,7 @@ function infoBox(title, text) {
 
 function sectionBox(icon, title, bullets) {
   const items = bullets.map(b => `<li style="margin-bottom:6px;">${b}</li>`).join("");
+
   return `
     <div style="background:white; border-radius:8px; border:0.5px solid rgba(0,0,0,0.1); padding:16px 20px; margin:16px 0;">
       <p style="margin:0 0 10px 0; font-size:16px; font-weight:500;">${icon} ${title}</p>
@@ -158,6 +196,7 @@ else {
   const lanKommunResult = await dbQuery("SELECT * FROM lan_kommun");
 
   let unemploymentResult = [];
+
   try {
     unemploymentResult = await dbQuery("SELECT * FROM arbetsloshet_by_lan");
   } catch (error) {
@@ -189,7 +228,13 @@ else {
     .flatMap(row => {
       const lan = getField(row, ["lan", "län", "Lan", "Län", "region", "Region"]);
       const kon = getField(row, ["kon", "kön", "Kon", "Kön", "gender", "Gender"]);
-      return yearColumns.map(year => ({ lan, year, kon: normalizeGender(kon), arbetsloshet: toNumber(row[year]) }));
+
+      return yearColumns.map(year => ({
+        lan,
+        year,
+        kon: normalizeGender(kon),
+        arbetsloshet: toNumber(row[year])
+      }));
     })
     .filter(row => row.lan && row.year && row.arbetsloshet !== null);
 
@@ -210,22 +255,32 @@ else {
 
     function buildTotalVotesMap(year) {
       const map = new Map();
+
       cleanedElection.forEach(row => {
         const key = normalize(row.kommun);
         const votes = year === "2018" ? row.roster2018 : row.roster2022;
+
         if (!map.has(key)) map.set(key, 0);
         map.set(key, map.get(key) + votes);
       });
+
       return map;
     }
 
-    const parties = [...new Set(cleanedElection.map(row => row.parti))].sort((a, b) => displayPartyName(a).localeCompare(displayPartyName(b), "sv"));
+    const parties = [...new Set(cleanedElection.map(row => row.parti))]
+      .sort((a, b) => displayPartyName(a).localeCompare(displayPartyName(b), "sv"));
+
     const partyOptions = parties.map(party => displayPartyName(party));
-    const years = [...new Set(unemploymentData.map(row => row.year))].sort((a, b) => b.localeCompare(a));
-    const counties = [...new Set(unemploymentData.map(row => row.lan))].sort((a, b) => a.localeCompare(b, "sv"));
+
+    const years = [...new Set(unemploymentData.map(row => row.year))]
+      .sort((a, b) => b.localeCompare(a));
+
+    const counties = [...new Set(unemploymentData.map(row => row.lan))]
+      .sort((a, b) => a.localeCompare(b, "sv"));
+
     const hasGenderValues = unemploymentData.some(row => row.kon === "män" || row.kon === "kvinnor");
 
-    const chosenPartyDisplay = addDropdown("Välj parti:", partyOptions, displayPartyName(parties[0]));
+    const chosenPartyDisplay = addDropdown("Välj parti", partyOptions, displayPartyName(parties[0]));
     const chosenParty = parties.find(party => displayPartyName(party) === chosenPartyDisplay) || parties[0];
     const chosenPartyName = displayPartyName(chosenParty);
 
@@ -236,12 +291,16 @@ else {
     const selectedGender = normalizeGender(chosenGender);
     const totalVotesMap = buildTotalVotesMap(chosenYear);
 
-    addToPage(infoBox("Analysens hypotes", "Vi undersöker om stödet för " + chosenPartyName + " har ett samband med arbetslöshet. Vår hypotes är att partistödet kan skilja sig mellan kommuner i län med högre eller lägre arbetslöshet."));
+    addToPage(infoBox(
+      "Analysens hypotes",
+      "Vi undersöker om stödet för " + chosenPartyName + " har ett samband med arbetslöshet. Vår hypotes är att partistödet kan skilja sig mellan kommuner i län med högre eller lägre arbetslöshet."
+    ));
 
     const unemploymentRows = unemploymentData.filter(row => {
       const yearMatch = row.year === chosenYear;
       const countyMatch = chosenCounty === "Alla län" || row.lan === chosenCounty;
       const genderMatch = row.kon === selectedGender;
+
       return yearMatch && countyMatch && genderMatch;
     });
 
@@ -251,14 +310,23 @@ else {
       .filter(row => {
         const partyMatch = row.parti === chosenParty;
         const countyMatch = chosenCounty === "Alla län" || row.lan === chosenCounty;
+
         return partyMatch && countyMatch;
       })
       .map(row => {
         const arbetsloshet = unemploymentMap.get(normalize(row.lan));
         const totalVotes = totalVotesMap.get(normalize(row.kommun));
         const partyVotes = chosenYear === "2018" ? row.roster2018 : row.roster2022;
+
         if (arbetsloshet === undefined || !totalVotes || totalVotes === 0) return null;
-        return { kommun: row.kommun, lan: row.lan, arbetsloshet, partyVotes, partyShare: (partyVotes / totalVotes) * 100 };
+
+        return {
+          kommun: row.kommun,
+          lan: row.lan,
+          arbetsloshet,
+          partyVotes,
+          partyShare: (partyVotes / totalVotes) * 100
+        };
       })
       .filter(row => row !== null);
 
@@ -278,34 +346,69 @@ else {
       const lowestUnemployment = mergedData.reduce((min, row) => row.arbetsloshet < min.arbetsloshet ? row : min, mergedData[0]);
 
       addMdToPage(`## Sammanfattning av urvalet`);
+
       addToPage(statCards([
-        { title: "Antal kommuner", value: new Set(mergedData.map(row => row.kommun)).size },
-        { title: "Genomsnittlig arbetslöshet", value: formatPercent(average(unemploymentValues)) },
-        { title: "Genomsnittligt stöd för " + chosenPartyName, value: formatPercent(average(shares)) },
-        { title: "Korrelation", value: corr === null ? "saknas" : corr.toFixed(3), note: corrLabel }
+        {
+          title: "Antal kommuner",
+          value: new Set(mergedData.map(row => row.kommun)).size
+        },
+        {
+          title: "Genomsnittlig arbetslöshet",
+          value: formatPercent(average(unemploymentValues))
+        },
+        {
+          title: "Genomsnittligt stöd för " + chosenPartyName,
+          value: formatPercent(average(shares))
+        },
+        {
+          title: "Korrelation",
+          value: corr === null ? "saknas" : corr.toFixed(3),
+          note: corrLabel
+        }
       ]));
 
       addMdToPage(`
 ## Hur varierar stödet för ${chosenPartyName} beroende på arbetslöshet?
 
-Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i kommunens län. Eftersom arbetslösheten finns på länsnivå får alla kommuner inom samma län samma värde — därför syns punkterna i lodräta grupper.
+Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i kommunens län. Eftersom arbetslösheten finns på länsnivå får alla kommuner inom samma län samma värde - därför syns punkterna i lodräta grupper.
 `);
 
       drawGoogleChart({
         type: "ScatterChart",
-        data: [["Arbetslöshet", "Stöd för " + chosenPartyName], ...mergedData.map(row => [row.arbetsloshet, row.partyShare])],
+        data: [
+          ["Arbetslöshet", "Stöd för " + chosenPartyName],
+          ...mergedData.map(row => [row.arbetsloshet, row.partyShare])
+        ],
         options: {
           title: "Arbetslöshet vs stöd för " + chosenPartyName + " (" + chosenYear + ")",
           height: 650,
           chartArea: { width: "84%", height: "74%" },
-          hAxis: { title: "Arbetslöshet i länet (%)", textStyle: { fontSize: 14 }, titleTextStyle: { fontSize: 16, bold: true } },
-          vAxis: { title: "Röstandel för " + chosenPartyName + " (%)", textStyle: { fontSize: 14 }, titleTextStyle: { fontSize: 16, bold: true } },
-          trendlines: { 0: { type: "linear", showR2: true, visibleInLegend: true } },
-          legend: { position: "bottom", textStyle: { fontSize: 13 } }
+          hAxis: {
+            title: "Arbetslöshet i länet (%)",
+            textStyle: { fontSize: 14 },
+            titleTextStyle: { fontSize: 16, bold: true }
+          },
+          vAxis: {
+            title: "Röstandel för " + chosenPartyName + " (%)",
+            textStyle: { fontSize: 14 },
+            titleTextStyle: { fontSize: 16, bold: true }
+          },
+          trendlines: {
+            0: {
+              type: "linear",
+              showR2: true,
+              visibleInLegend: true
+            }
+          },
+          legend: {
+            position: "bottom",
+            textStyle: { fontSize: 13 }
+          }
         }
       });
 
       addMdToPage(`## Resultat`);
+
       addToPage(sectionBox("📊", "Samband", [
         "Analysen visar ett <strong>" + corrLabel + "</strong> mellan arbetslöshet och stöd för <strong>" + chosenPartyName + "</strong>",
         describeCorrelation(corr, chosenParty),
@@ -317,32 +420,51 @@ Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i komm
       const sortedBySupport = [...mergedData].sort((a, b) => b.partyShare - a.partyShare);
 
       addMdToPage(`## Kommuner där ${chosenPartyName} har högst stöd`);
-      tableFromData({ data: sortedBySupport.slice(0, 5).map(row => ({ Kommun: row.kommun, Län: row.lan, Arbetslöshet: formatPercent(row.arbetsloshet), Röstandel: formatPercent(row.partyShare) })) });
+
+      tableFromData({
+        data: sortedBySupport.slice(0, 5).map(row => ({
+          Kommun: row.kommun,
+          Län: row.lan,
+          Arbetslöshet: formatPercent(row.arbetsloshet),
+          Röstandel: formatPercent(row.partyShare)
+        }))
+      });
 
       addMdToPage(`## Kommuner där ${chosenPartyName} har lägst stöd`);
-      tableFromData({ data: sortedBySupport.slice(-5).reverse().map(row => ({ Kommun: row.kommun, Län: row.lan, Arbetslöshet: formatPercent(row.arbetsloshet), Röstandel: formatPercent(row.partyShare) })) });
+
+      tableFromData({
+        data: sortedBySupport.slice(-5).reverse().map(row => ({
+          Kommun: row.kommun,
+          Län: row.lan,
+          Arbetslöshet: formatPercent(row.arbetsloshet),
+          Röstandel: formatPercent(row.partyShare)
+        }))
+      });
 
       addMdToPage(`## Kort analys`);
+
       addToPage(sectionBox("📊", "Analys", [
         "Urvalet <strong>" + chosenPartyName + "</strong>, <strong>" + chosenGender + "</strong>, <strong>" + chosenCounty + "</strong>, <strong>" + chosenYear + "</strong>: <strong>" + corrLabel + "</strong>",
         "Högst arbetslöshet i urvalet: <strong>" + highestUnemployment.lan + "</strong> med <strong>" + formatPercent(highestUnemployment.arbetsloshet) + "</strong>",
         "Lägst arbetslöshet: <strong>" + lowestUnemployment.lan + "</strong> med <strong>" + formatPercent(lowestUnemployment.arbetsloshet) + "</strong>",
         "Sambandet tyder på att ekonomiska skillnader hänger ihop med politiska röstningsmönster",
-        "Arbetslöshet <strong>orsakar inte</strong> hur människor röstar — bakomliggande faktorer som industristruktur och utbildning driver troligen både arbetslöshet och röstbeteende"
+        "Arbetslöshet <strong>orsakar inte</strong> hur människor röstar - bakomliggande faktorer som industristruktur och utbildning driver troligen både arbetslöshet och röstbeteende"
       ]));
 
       addToPage(sectionBox("🔍", "Metod och begränsning", [
-        "Arbetslöshet på <strong>länsnivå</strong> kopplas till valresultat på <strong>kommunnivå</strong> — alla kommuner i samma län får samma arbetslöshetsvärde",
+        "Arbetslöshet på <strong>länsnivå</strong> kopplas till valresultat på <strong>kommunnivå</strong> - alla kommuner i samma län får samma arbetslöshetsvärde",
         "Gör analysen mindre detaljerad än inkomstanalysen",
-        "Vissa länsvärden är NULL och filtreras bort",
+        "Arbetslöshetsdatan är inte komplett för alla län",
+        "<strong>Östergötlands län</strong> saknas i arbetslöshetsdatan och <strong>Gotlands län</strong> har ett saknat värde",
+        "Kommuner utan giltigt arbetslöshetsvärde filtreras bort. Därför ingår <strong>276 kommuner</strong> istället för 290 i denna analys",
         "Totalt-värdet är inte en summering av kön utan ett eget totalvärde",
-        "Korrelation bevisar inte kausalitet — andra faktorer kan påverka"
+        "Korrelation bevisar inte kausalitet - andra faktorer kan påverka"
       ]));
 
       addToPage(sectionBox("⚠️", "Extremvärden", [
         "<strong>Södermanlands län</strong> har genomgående hög arbetslöshet och kan påverka trendlinjen oproportionerligt",
-        "<strong>Norrbottens</strong> och <strong>Västerbottens</strong> län avviker från glesbygdsmönstret — låg arbetslöshet tack vare stark offentlig sektor",
-        "Dessa extremlän kan påverka korrelationen påtagligt — tolka som indikation, inte bevis"
+        "<strong>Norrbottens</strong> och <strong>Västerbottens</strong> län avviker från glesbygdsmönstret - låg arbetslöshet tack vare stark offentlig sektor",
+        "Dessa extremlän kan påverka korrelationen påtagligt - tolka som indikation, inte bevis"
       ]));
     }
   }

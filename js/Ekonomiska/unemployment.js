@@ -137,9 +137,9 @@ else {
     const counties = [...new Set(unemploymentData.map(row => row.lan))].sort((a, b) => a.localeCompare(b, "sv"));
     const hasGenderValues = unemploymentData.some(row => row.kon === "män" || row.kon === "kvinnor");
 
-    const chosenYear = addDropdown("Välj år:", years, years[0]);
-    const chosenCounty = addDropdown("Välj län:", ["Alla län", ...counties], "Alla län");
-    const chosenGender = hasGenderValues ? addDropdown("Välj kön:", ["Totalt", "Kvinnor", "Män"], "Totalt") : "Totalt";
+    const chosenYear = addDropdown("Välj år", years, years[0]);
+    const chosenCounty = addDropdown("Välj län", ["Alla län", ...counties], "Alla län");
+    const chosenGender = hasGenderValues ? addDropdown("Välj kön", ["Totalt", "Kvinnor", "Män"], "Totalt") : "Totalt";
 
     const selectedGender = normalizeGender(chosenGender);
 
