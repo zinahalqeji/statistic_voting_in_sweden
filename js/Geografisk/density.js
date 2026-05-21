@@ -45,6 +45,22 @@ const parties = {
 
 const partyKeys = Object.keys(parties);
 
+const partyColors = {
+  S: "#E4003B",
+  M: "#1B66AE",
+  SD: "#DDCC00",
+  V: "#9B1D20",
+  C: "#009933",
+  KD: "#005F8D",
+  L: "#006AB3",
+  MP: "#83CF39"
+};
+
+// Stapeldiagrammets färger är alltid mörkröd (2018) och ljusröd (2022)
+// oavsett valt parti – färgen visar vilket år stapeln tillhör.
+const BAR_COLOR_2018 = "#A32D2D";
+const BAR_COLOR_2022 = "#F09595";
+
 function toNumber(value) {
   const num = Number(String(value || 0).replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(num) ? num : 0;
@@ -55,6 +71,16 @@ function formatPercent(value) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1
   })} %`;
+}
+
+function formatPE(value) {
+  const abs = Math.abs(value).toLocaleString("sv-SE", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+  if (value > 0) return "+" + abs + " pe";
+  if (value < 0) return "-" + abs + " pe";
+  return "0,0 pe";
 }
 
 function formatDensity(value) {
@@ -73,28 +99,39 @@ function average(values) {
 function correlation(xValues, yValues) {
   const n = Math.min(xValues.length, yValues.length);
   if (n < 2) return 0;
-
   const x = xValues.slice(0, n);
   const y = yValues.slice(0, n);
-
   const avgX = average(x);
   const avgY = average(y);
-
-  let numerator = 0;
-  let denominatorX = 0;
-  let denominatorY = 0;
-
+  let numerator = 0, denominatorX = 0, denominatorY = 0;
   for (let i = 0; i < n; i++) {
     const dx = x[i] - avgX;
     const dy = y[i] - avgY;
-
     numerator += dx * dy;
     denominatorX += dx * dx;
     denominatorY += dy * dy;
   }
-
   const denominator = Math.sqrt(denominatorX * denominatorY);
   return denominator === 0 ? 0 : numerator / denominator;
+}
+
+// Beräknar linjär regression (minsta kvadratmetoden) och returnerar k (lutning) och m (skärning)
+// Används för att rita trendlinjen i scatterdiagrammet.
+// Formel: k = Σ((x - x̄)(y - ȳ)) / Σ((x - x̄)²), m = ȳ - k * x̄
+function linearRegression(xValues, yValues) {
+  const n = Math.min(xValues.length, yValues.length);
+  const x = xValues.slice(0, n);
+  const y = yValues.slice(0, n);
+  const avgX = average(x);
+  const avgY = average(y);
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    num += (x[i] - avgX) * (y[i] - avgY);
+    den += (x[i] - avgX) ** 2;
+  }
+  const k = den === 0 ? 0 : num / den;
+  const m = avgY - k * avgX;
+  return { k, m };
 }
 
 function totalVotes(row, year) {
@@ -108,9 +145,96 @@ function partyShare(row, partyKey, year) {
   const party = parties[partyKey];
   const col = year === "2018" ? party.col2018 : party.col2022;
   const total = totalVotes(row, year);
-
   if (!total) return 0;
   return (toNumber(row[col]) / total) * 100;
+}
+
+function corrStrength(r) {
+  const abs = Math.abs(r);
+  const dir = r > 0 ? "positivt" : "negativt";
+  if (abs >= 0.6) return `starkt ${dir} samband`;
+  if (abs >= 0.3) return `måttligt ${dir} samband`;
+  if (abs >= 0.1) return `svagt ${dir} samband`;
+  return "inget tydligt linjärt samband";
+}
+
+function corrExplain(r, partyLabel) {
+  if (r > 0.1) return `${partyLabel} tenderar att få <strong>högre</strong> röstandel i tätbefolkade kommuner.`;
+  if (r < -0.1) return `${partyLabel} tenderar att få <strong>lägre</strong> röstandel i tätbefolkade kommuner, dvs. starkare stöd på landsbygden.`;
+  return `Det finns inget tydligt samband mellan befolkningstäthet och stöd för ${partyLabel}.`;
+}
+
+// Genererar kausalitetsdiskussion baserat på korrelationsvärde och valt parti.
+// Diskuterar mellanliggande variabler och hur troligt det är att sambandet är kausalt.
+function causalityDiscussion(r, partyLabel, partyKey) {
+  const abs = Math.abs(r);
+  const direction = r > 0 ? "positivt" : "negativt";
+
+  if (abs < 0.1) {
+    return `Eftersom korrelationen för ${partyLabel} är nära noll är det osannolikt att befolkningstäthet
+    har ett direkt samband med partiets stöd. Det innebär att kausalitet – att tätheten i sig skulle
+    <em>orsaka</em> ett visst röstbeteende – är ännu mer osannolik. Andra faktorer som åldersstruktur,
+    inkomst eller regionala traditioner kan spela en större roll.`;
+  }
+
+  let partyContext = "";
+  if (partyKey === "S") {
+    partyContext = `Socialdemokraterna har historiskt haft starkt stöd i industriorter och norrländska kommuner,
+    som inte alltid är de tätast befolkade. Det kan förklara varför sambandet med täthet inte är entydigt –
+    partiet har stöd både i vissa storstadsdelar och på landsbygden, men av olika anledningar.`;
+  } else if (partyKey === "SD") {
+    partyContext = `Sverigedemokraterna har visat sig vara starka i mindre tätbefolkade kommuner med hög
+    arbetslöshet och låg inkomst. Det innebär att ett negativt samband med täthet sannolikt inte beror på
+    tätheten i sig, utan på de socioekonomiska förhållanden som ofta samvarierar med glesbefolkade områden.`;
+  } else if (partyKey === "M") {
+    partyContext = `Moderaterna har traditionellt starkt stöd i välbärgade förorter och storstadsregioner.
+    Ett positivt samband med täthet kan alltså delvis förklaras av att tätbefolkade kommuner ofta har
+    högre inkomster och högre andel tjänstemän – faktorer som kan påverka röstningen mer direkt än tätheten i sig.`;
+  } else if (partyKey === "C") {
+    partyContext = `Centerpartiet har historiskt haft sitt stärkaste stöd på landsbygden. Ett negativt
+    samband med befolkningstäthet är därför förväntat, men kausaliteten är troligen indirekt – det är
+    snarare frågor om landsbygdspolitik, jordbruk och glesbygdsservice som driver stödet, inte tätheten i sig.`;
+  } else {
+    partyContext = `Det är troligt att sambandet med befolkningstäthet för ${partyLabel} delvis speglar
+    andra bakomliggande faktorer som utbildningsnivå, inkomst eller åldersstruktur, snarare än tätheten i sig.`;
+  }
+
+  return `Korrelationen är ${direction} (r = ${r.toFixed(2)}), men ett statistiskt samband innebär inte
+  automatiskt att befolkningstäthet <em>orsakar</em> röstningsmönstret. Tätheten samvarierar med
+  flera andra faktorer som kan ha en mer direkt påverkan på hur folk röstar:
+
+  <ul>
+    <li><strong>Inkomstnivå</strong> – tätbefolkade kommuner tenderar att ha högre medianinkomster,
+    vilket i sig påverkar partisympatierna.</li>
+    <li><strong>Utbildningsnivå</strong> – städer har generellt högre andel med universitetsutbildning,
+    vilket korrelerar med specifika röstmönster.</li>
+    <li><strong>Åldersstruktur</strong> – yngre befolkning samlas oftare i städer och röstar annorlunda
+    än äldre på landsbygden.</li>
+    <li><strong>Arbetsmarknad</strong> – tillgång till jobb och typ av arbete skiljer sig mellan stad
+    och landsbygd och kan påverka vilka politiska frågor som väger tyngst.</li>
+  </ul>
+
+  ${partyContext}
+
+  Slutsatsen är att befolkningstäthet snarare är en <strong>indikatorvariabel</strong> som speglar ett
+  helt komplex av socioekonomiska förhållanden, än en direkt orsak till röstningsmönstret. För att
+  säkerställa kausalitet skulle man behöva kontrollera för dessa mellanliggande variabler – något som
+  kräver mer avancerad statistisk analys än vad som görs här.`;
+}
+
+function partyBadge(partyKey, partyName) {
+  return `
+    <div style="display:flex; align-items:center; gap:12px; margin:12px 0 8px 0;">
+      <div style="
+        width:44px; height:44px; border-radius:50%;
+        background:${partyColors[partyKey]};
+        display:flex; align-items:center; justify-content:center;
+        font-weight:700; font-size:15px; color:#fff; flex-shrink:0;">
+        ${partyKey}
+      </div>
+      <span style="font-size:16px; font-weight:500; color:#222;">${partyName}</span>
+    </div>
+  `;
 }
 
 function statCards(cards) {
@@ -164,14 +288,16 @@ Här undersöker vi om kommuners befolkningstäthet hänger ihop med hur männis
 **3. Har sambandet mellan befolkningstäthet och röstning förändrats mellan 2018 och 2022?**
 
 **Enheter:**
-- Befolkningstäthet anges i **invånare per km²**
-- Röstandel anges i **procent (%)**
+- Befolkningstäthet anges i **invånare per km²** – ett mått på hur många människor som bor per kvadratkilometer i kommunen.
+- Röstandel anges i **procent (%)** – hur stor andel av de räknade partiernas röster som gick till det valda partiet.
+- Förändring mellan år anges i **procentenheter (pe)** – skillnaden mellan två procenttal, t.ex. från 30 % till 33 % = +3 pe.
 `);
 
 addToPage(infoBox(
   "Analysens hypotes",
   "Vår hypotes är att befolkningstäthet har samband med röstningsmönster. Vi förväntar oss att vissa partier har starkare stöd i tätbefolkade kommuner, där fler människor bor nära större arbetsmarknader, högre utbildningsnivåer och urbana miljöer. Samtidigt kan andra partier vara starkare i glesbefolkade kommuner, där frågor om landsbygd, service, avstånd och lokal ekonomi kan väga tyngre. Vi undersöker därför om sambandet syns i data och om det förändrades mellan 2018 och 2022."
 ));
+
 addToPage(loadingBox());
 
 if (!dbInfoOk) {
@@ -216,19 +342,38 @@ else {
   const corr2018 = correlation(densityValues2018, supportValues2018);
   const corr2022 = correlation(densityValues2022, supportValues2022);
 
-  const sortedByDensity = [...cleanedData].sort((a, b) => a.density2022 - b.density2022);
-  const groupSize = Math.ceil(sortedByDensity.length / 3);
+  // Beräkna trendlinjer med linjär regression (minsta kvadratmetoden)
+  // Trendlinjen visar den bäst passande räta linjen genom alla datapunkter
+  const reg2018 = linearRegression(densityValues2018, supportValues2018);
+  const reg2022 = linearRegression(densityValues2022, supportValues2022);
 
-  const lowDensity = sortedByDensity.slice(0, groupSize);
-  const middleDensity = sortedByDensity.slice(groupSize, groupSize * 2);
-  const highDensity = sortedByDensity.slice(groupSize * 2);
+  const maxDensity2018 = Math.max(...densityValues2018);
+  const maxDensity2022 = Math.max(...densityValues2022);
+
+  // Trendlinjens startpunkt (täthet = 0) och slutpunkt (max täthet i urvalet)
+  const trendStart2018 = reg2018.m;
+  const trendEnd2018 = reg2018.k * maxDensity2018 + reg2018.m;
+  const trendStart2022 = reg2022.m;
+  const trendEnd2022 = reg2022.k * maxDensity2022 + reg2022.m;
+
+  // Dela in kommuner baserat på percentiler av befolkningstäthet (33:e och 66:e percentilen).
+  // Detta speglar den faktiska fördelningen av täthet – inte bara kommunernas plats i en sorterad lista.
+  // Grupperna kan vara olika stora eftersom täthetsvärdena är ojämnt fördelade i verkligheten.
+  const sortedDensities = [...cleanedData]
+    .map(r => r.density2022)
+    .sort((a, b) => a - b);
+
+  const p33 = sortedDensities[Math.floor(sortedDensities.length * 0.33)];
+  const p66 = sortedDensities[Math.floor(sortedDensities.length * 0.66)];
+
+  const lowDensity = cleanedData.filter(r => r.density2022 <= p33);
+  const middleDensity = cleanedData.filter(r => r.density2022 > p33 && r.density2022 <= p66);
+  const highDensity = cleanedData.filter(r => r.density2022 > p66);
 
   const lowAvg2018 = average(lowDensity.map(row => row.support2018));
   const lowAvg2022 = average(lowDensity.map(row => row.support2022));
-
   const middleAvg2018 = average(middleDensity.map(row => row.support2018));
   const middleAvg2022 = average(middleDensity.map(row => row.support2022));
-
   const highAvg2018 = average(highDensity.map(row => row.support2018));
   const highAvg2022 = average(highDensity.map(row => row.support2022));
 
@@ -264,56 +409,81 @@ else {
   addMdToPage(`
 ## Samband mellan befolkningstäthet och röstandel
 
-Diagrammet visar kommunernas befolkningstäthet på x-axeln och röstandel för **${chosenPartyName}** på y-axeln. Varje punkt motsvarar en kommun.
+Diagrammet visar kommunernas befolkningstäthet på x-axeln (invånare/km²) och röstandel för **${chosenPartyName}** på y-axeln (%). Varje punkt motsvarar en kommun.
+
+En punkt **högt upp till höger** = tätbefolkad kommun med högt partistöd. En punkt **nere till vänster** = glesbefolkad kommun med lågt stöd.
+
+**Trendlinjen** (röd linje) är beräknad med linjär regression – minsta kvadratmetoden. Den visar den bäst passande räta linjen genom alla kommuners datapunkter. En stigande trendlinje innebär ett positivt samband, en sjunkande innebär ett negativt samband. Ju brantare lutning, desto starkare är sambandet.
 `);
+
+  addToPage(partyBadge(chosenParty, chosenPartyName));
 
   drawGoogleChart({
     type: "ScatterChart",
     data: [
-      ["Befolkningstäthet 2018", "Röstandel 2018 (%)"],
-      ...cleanedData.map(row => [row.density2018, row.support2018])
+      [
+        { label: "Befolkningstäthet (invånare/km²)", type: "number" },
+        { label: "Röstandel (%)", type: "number" },
+        { label: "Trendlinje", type: "number" }
+      ],
+      ...cleanedData.map(row => [row.density2018, row.support2018, null]),
+      [0, null, trendStart2018],
+      [maxDensity2018, null, trendEnd2018]
     ],
     options: {
-      title: `Befolkningstäthet och stöd för ${chosenPartyName} 2018`,
+      title: `Befolkningstäthet och stöd för ${chosenPartyName} (${chosenParty}) – 2018`,
       height: 520,
       chartArea: { width: "75%", height: "70%" },
-      hAxis: {
-        title: "Befolkningstäthet (invånare/km²)"
+      hAxis: { title: "Befolkningstäthet (invånare/km²)" },
+      vAxis: { title: "Röstandel (%)", viewWindow: { min: 0 } },
+      series: {
+        0: { color: partyColors[chosenParty], pointSize: 5 },
+        1: { color: "#e53935", lineWidth: 2, pointSize: 0 }
       },
-      vAxis: {
-        title: "Röstandel (%)",
-        viewWindow: { min: 0 }
-      },
-      legend: "none"
+      legend: { position: "bottom" }
     }
   });
 
+  addToPage(partyBadge(chosenParty, chosenPartyName));
+
   drawGoogleChart({
     type: "ScatterChart",
     data: [
-      ["Befolkningstäthet 2022", "Röstandel 2022 (%)"],
-      ...cleanedData.map(row => [row.density2022, row.support2022])
+      [
+        { label: "Befolkningstäthet (invånare/km²)", type: "number" },
+        { label: "Röstandel (%)", type: "number" },
+        { label: "Trendlinje", type: "number" }
+      ],
+      ...cleanedData.map(row => [row.density2022, row.support2022, null]),
+      [0, null, trendStart2022],
+      [maxDensity2022, null, trendEnd2022]
     ],
     options: {
-      title: `Befolkningstäthet och stöd för ${chosenPartyName} 2022`,
+      title: `Befolkningstäthet och stöd för ${chosenPartyName} (${chosenParty}) – 2022`,
       height: 520,
       chartArea: { width: "75%", height: "70%" },
-      hAxis: {
-        title: "Befolkningstäthet (invånare/km²)"
+      hAxis: { title: "Befolkningstäthet (invånare/km²)" },
+      vAxis: { title: "Röstandel (%)", viewWindow: { min: 0 } },
+      series: {
+        0: { color: partyColors[chosenParty], pointSize: 5 },
+        1: { color: "#e53935", lineWidth: 2, pointSize: 0 }
       },
-      vAxis: {
-        title: "Röstandel (%)",
-        viewWindow: { min: 0 }
-      },
-      legend: "none"
+      legend: { position: "bottom" }
     }
   });
 
   addMdToPage(`
 ## Tätbefolkade och glesbefolkade kommuner
 
-Kommunerna delas in i tre ungefär lika stora grupper baserat på befolkningstäthet år 2022: låg, medel och hög befolkningstäthet.
+Kommunerna delas in i tre ungefär lika stora grupper baserat på befolkningstäthet år 2022:
+- **Låg befolkningstäthet** – ${lowDensity.length} kommuner under 33:e percentilen (täthet ≤ ${formatDensity(p33)})
+- **Medel befolkningstäthet** – ${middleDensity.length} kommuner mellan 33:e och 66:e percentilen
+- **Hög befolkningstäthet** – ${highDensity.length} kommuner över 66:e percentilen (täthet > ${formatDensity(p66)})
+
+Diagrammet visar genomsnittlig röstandel (%) för respektive grupp. **Mörkröd stapel = 2018, ljusröd stapel = 2022.** Förändringen anges i procentenheter (pe).
 `);
+
+  addToPage(partyBadge(chosenParty, chosenPartyName));
 
   drawGoogleChart({
     type: "ColumnChart",
@@ -324,21 +494,19 @@ Kommunerna delas in i tre ungefär lika stora grupper baserat på befolkningstä
       ["Hög befolkningstäthet", highAvg2018, highAvg2022]
     ],
     options: {
-      title: `Genomsnittligt stöd för ${chosenPartyName} per täthetsgrupp`,
+      title: `Genomsnittligt stöd för ${chosenPartyName} (${chosenParty}) per täthetsgrupp (%)`,
       height: 520,
       chartArea: { width: "75%", height: "70%" },
-      vAxis: {
-        title: "Röstandel (%)",
-        viewWindow: { min: 0 }
-      },
-      hAxis: {
-        title: "Täthetsgrupp"
-      }
+      vAxis: { title: "Röstandel (%)", viewWindow: { min: 0 } },
+      hAxis: { title: "Täthetsgrupp" },
+      colors: [BAR_COLOR_2018, BAR_COLOR_2022]
     }
   });
 
   addMdToPage(`
 ## Tabell: täthetsgrupper
+
+Tabellen visar genomsnittlig röstandel per grupp för båda valen. Förändringen anges i **procentenheter (pe)** – skillnaden mellan 2022 och 2018. Ett positivt värde betyder att partiet ökade sitt stöd, ett negativt att det minskade.
 `);
 
   tableFromData({
@@ -348,27 +516,29 @@ Kommunerna delas in i tre ungefär lika stora grupper baserat på befolkningstä
         "Antal kommuner": lowDensity.length,
         "Genomsnittligt stöd 2018 (%)": formatPercent(lowAvg2018),
         "Genomsnittligt stöd 2022 (%)": formatPercent(lowAvg2022),
-        "Förändring procentenheter": formatPercent(lowAvg2022 - lowAvg2018)
+        "Förändring (pe)": formatPE(lowAvg2022 - lowAvg2018)
       },
       {
         Grupp: "Medel befolkningstäthet",
         "Antal kommuner": middleDensity.length,
         "Genomsnittligt stöd 2018 (%)": formatPercent(middleAvg2018),
         "Genomsnittligt stöd 2022 (%)": formatPercent(middleAvg2022),
-        "Förändring procentenheter": formatPercent(middleAvg2022 - middleAvg2018)
+        "Förändring (pe)": formatPE(middleAvg2022 - middleAvg2018)
       },
       {
         Grupp: "Hög befolkningstäthet",
         "Antal kommuner": highDensity.length,
         "Genomsnittligt stöd 2018 (%)": formatPercent(highAvg2018),
         "Genomsnittligt stöd 2022 (%)": formatPercent(highAvg2022),
-        "Förändring procentenheter": formatPercent(highAvg2022 - highAvg2018)
+        "Förändring (pe)": formatPE(highAvg2022 - highAvg2018)
       }
     ]
   });
 
   addMdToPage(`
-## Exempel på extremkommuner
+## Extremkommuner – högst och lägst befolkningstäthet
+
+Tabellen visar kommunen med högst respektive lägst befolkningstäthet 2022, samt hur det valda partiet presterade i båda valen. Dessa extremkommuner kan ha stor påverkan på korrelationsberäkningen – därför är det viktigt att granska dem separat. Om stödet förändrades kraftigt i dessa kommuner kan det förklara varför korrelationen skiljer sig mellan 2018 och 2022.
 `);
 
   tableFromData({
@@ -377,52 +547,60 @@ Kommunerna delas in i tre ungefär lika stora grupper baserat på befolkningstä
         Kommun: mostDense.kommun,
         Typ: "Högst befolkningstäthet",
         "Befolkningstäthet 2022": formatDensity(mostDense.density2022),
-        ["Stöd för " + chosenPartyName + " 2022"]: formatPercent(mostDense.support2022)
+        [`Stöd ${chosenParty} 2018 (%)`]: formatPercent(mostDense.support2018),
+        [`Stöd ${chosenParty} 2022 (%)`]: formatPercent(mostDense.support2022),
+        "Förändring (pe)": formatPE(mostDense.support2022 - mostDense.support2018)
       },
       {
         Kommun: leastDense.kommun,
         Typ: "Lägst befolkningstäthet",
         "Befolkningstäthet 2022": formatDensity(leastDense.density2022),
-        ["Stöd för " + chosenPartyName + " 2022"]: formatPercent(leastDense.support2022)
+        [`Stöd ${chosenParty} 2018 (%)`]: formatPercent(leastDense.support2018),
+        [`Stöd ${chosenParty} 2022 (%)`]: formatPercent(leastDense.support2022),
+        "Förändring (pe)": formatPE(leastDense.support2022 - leastDense.support2018)
       }
     ]
   });
 
-  const corrText2018 =
-    corr2018 > 0.2 ? "positivt samband" :
-      corr2018 < -0.2 ? "negativt samband" :
-        "svagt eller inget tydligt samband";
-
-  const corrText2022 =
-    corr2022 > 0.2 ? "positivt samband" :
-      corr2022 < -0.2 ? "negativt samband" :
-        "svagt eller inget tydligt samband";
-
   addMdToPage(`
-## Kort analys
+## Analys
 
 För **${chosenPartyName}** är korrelationen mellan befolkningstäthet och röstandel **${corr2018.toFixed(2)}** år 2018 och **${corr2022.toFixed(2)}** år 2022.
 
-Detta innebär att sambandet 2018 kan beskrivas som **${corrText2018}**, medan sambandet 2022 kan beskrivas som **${corrText2022}**.
+Korrelationen 2018 innebär ett **${corrStrength(corr2018)}**. ${corrExplain(corr2018, chosenPartyName)}
 
-I kommuner med **låg befolkningstäthet** förändrades stödet från **${formatPercent(lowAvg2018)}** till **${formatPercent(lowAvg2022)}**. I kommuner med **hög befolkningstäthet** förändrades stödet från **${formatPercent(highAvg2018)}** till **${formatPercent(highAvg2022)}**.
+Korrelationen 2022 innebär ett **${corrStrength(corr2022)}**. ${corrExplain(corr2022, chosenPartyName)}
 
-Resultatet visar om partiet tenderar att vara starkare i tätbefolkade eller glesbefolkade kommuner. Det är dock viktigt att sambandet inte automatiskt betyder att befolkningstäthet orsakar ett visst röstningsmönster.
+Trendlinjens lutning 2018 är **${reg2018.k.toFixed(4)} procentenheter per invånare/km²**, och 2022 är den **${reg2022.k.toFixed(4)} procentenheter per invånare/km²**. ${Math.abs(reg2022.k) > Math.abs(reg2018.k)
+      ? "Lutningen har blivit brantare mellan valen, vilket tyder på att sambandet stärkts."
+      : Math.abs(reg2022.k) < Math.abs(reg2018.k)
+        ? "Lutningen har blivit flackare mellan valen, vilket tyder på att sambandet försvagats."
+        : "Lutningen är i stort sett oförändrad mellan valen."}
 
-## Metod och begränsning
+I kommuner med **låg befolkningstäthet** förändrades stödet med **${formatPE(lowAvg2022 - lowAvg2018)}** mellan valen. I kommuner med **hög befolkningstäthet** förändrades stödet med **${formatPE(highAvg2022 - highAvg2018)}**.
+`);
 
-Analysen använder tabellen **valdata_kommun** från databasen **counties-sqlite**. Befolkningstäthet anges i **invånare per km²** och röstandel anges i **procent (%)**.
+  addToPage(infoBox(
+    "Kausalitet – orsakar befolkningstäthet röstningsmönstret?",
+    causalityDiscussion(corr2022, chosenPartyName, chosenParty)
+  ));
 
-Röstandel beräknas som partiets röster dividerat med summan av röster på partierna S, M, SD, V, C, KD, L och MP.
+  addMdToPage(`
+## Metod och begränsningar
 
-Korrelationen visar hur starkt sambandet är mellan befolkningstäthet och röstandel. Ett värde nära **1** betyder positivt samband, ett värde nära **-1** betyder negativt samband och ett värde nära **0** betyder svagt eller inget linjärt samband.
+Analysen använder tabellen **valdata_kommun** från databasen **counties-sqlite**.
 
-En begränsning är att analysen använder kommunnivå. Inom en kommun kan det finnas både tätorter och landsbygd, vilket gör att befolkningstätheten kan förenkla verkligheten.
+**Hur röstandel räknas ut:** Partiets röster divideras med summan av röster för S, M, SD, V, C, KD, L och MP i kommunen. Övriga partier ingår inte i nämnaren.
 
-## Extremvärden
+**Hur korrelation räknas ut:** Pearsons korrelationskoefficient beräknas mellan befolkningstäthet och röstandel för samtliga kommuner. Värdet ligger alltid mellan -1 och +1:
+- Nära **+1** = starkt positivt samband (hög täthet → högt stöd)
+- Nära **-1** = starkt negativt samband (hög täthet → lågt stöd)
+- Nära **0** = inget linjärt samband
 
-Kommuner med mycket hög befolkningstäthet, exempelvis storstadskommuner, kan påverka korrelationen mycket. På samma sätt kan mycket glesbefolkade kommuner påverka analysen i andra riktningen.
+**Hur trendlinjen räknas ut:** Linjär regression med minsta kvadratmetoden beräknar den räta linje som minimerar summan av kvadrerade avstånd från alla datapunkter. Lutningen (k) anger hur många procentenheter röstandelen förändras per extra invånare/km², och skärningspunkten (m) anger förväntat stöd vid täthet = 0.
 
-Därför visar sidan både scatterplots, täthetsgrupper och exempel på extremkommuner. Detta gör det lättare att se om mönstret gäller brett eller om det påverkas av enstaka kommuner.
+**Hur täthetsgrupperna räknas ut:** Kommunerna delas in i tre grupper baserat på befolkningstäthetens 33:e och 66:e percentil. Gränsen för låg-gruppen sätts vid det täthetsvärde som 33 % av kommunerna ligger under, och gränsen för hög-gruppen vid det värde som 66 % av kommunerna ligger under. Grupperna kan vara olika stora eftersom täthetsvärdena inte är jämnt fördelade i verkligheten – de flesta svenska kommuner är glesbefolkade medan ett fåtal storstadskommuner har extremt hög täthet.
+
+**Begränsningar:** Analysen sker på kommunnivå. Inom en kommun kan det finnas både tätorter och landsbygd, vilket gör att befolkningstätheten kan förenkla verkligheten. Kommuner med extremt hög täthet (storstäder) kan påverka korrelationen oproportionerligt mycket.
 `);
 }

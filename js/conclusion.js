@@ -4,7 +4,7 @@ addMdToPage(`
 
 Detta projekt har undersökt vilka faktorer som påverkar röstningsmönster i Sverige genom att analysera valresultaten från riksdagsvalen 2018 och 2022 tillsammans med socioekonomiska och geografiska variabler på kommun- och länsnivå.
 
-Analysen visar att politiska förändringar i Sverige inte sker slumpmässigt, utan samvarierar med flera tydliga samhällsfaktorer. Resultaten visar bland annat att kommuner med högre medianinkomst i större utsträckning tenderade att röra sig mot högerblocket mellan valåren. Samtidigt kunde skillnader observeras mellan olika typer av kommuner beroende på urbanisering, befolkningsstruktur och andel utrikes födda.
+Analysen visar att politiska förändringar i Sverige inte sker slumpmässigt, utan samvarierar med flera tydliga samhällsfaktorer. Resultaten visar bland annat att kommuner med högre medianinkomst i större utsträckning tenderade att röra sig mot vänsterblocket mellan valåren. Samtidigt kunde skillnader observeras mellan olika typer av kommuner beroende på urbanisering, befolkningsstruktur och andel utrikes födda.
 
 Undersökningen visar även att sambandet mellan invandring och röstningsmönster varierar mellan olika partier. Vissa partier hade starkare stöd i kommuner med högre andel utrikes födda, medan andra partier uppvisade motsatt utveckling. Detta tyder på att demografiska faktorer kan påverka politiska preferenser, men också att sambanden är komplexa och skiljer sig mellan olika delar av landet.
 
