@@ -399,7 +399,7 @@ Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i komm
             row.arbetsloshet,
             row.partyShare,
             `
-        <div style="padding:10px 12px; font-size:13px; line-height:1.6;">
+        <div style="padding:10px 12px; font-size:13px; line-height:1.6; white-space:nowrap;">
           <strong>${row.kommun}</strong><br>
           Län: ${row.lan}<br>
           Arbetslöshet: ${formatPercent(row.arbetsloshet)}<br>
@@ -412,16 +412,21 @@ Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i komm
           title: "Arbetslöshet vs stöd för " + chosenPartyName + " (" + chosenYear + ")",
           height: 650,
           chartArea: { width: "84%", height: "74%" },
+
           hAxis: {
             title: "Arbetslöshet i länet (%)",
+            format: "#'%'",
             textStyle: { fontSize: 14 },
             titleTextStyle: { fontSize: 16, bold: true }
           },
+
           vAxis: {
             title: "Röstandel för " + chosenPartyName + " (%)",
+            format: "#'%'",
             textStyle: { fontSize: 14 },
             titleTextStyle: { fontSize: 16, bold: true }
           },
+
           trendlines: {
             0: {
               type: "linear",
@@ -429,7 +434,9 @@ Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i komm
               visibleInLegend: true
             }
           },
+
           tooltip: { isHtml: true },
+
           legend: {
             position: "bottom",
             textStyle: { fontSize: 13 }

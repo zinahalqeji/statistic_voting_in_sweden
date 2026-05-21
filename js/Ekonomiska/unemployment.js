@@ -190,14 +190,26 @@ Diagrammet visar arbetslösheten per län för det valda året. Län med högre 
 
       drawGoogleChart({
         type: "ColumnChart",
-        data: [["Län", "Arbetslöshet"], ...sortedByUnemployment.map(row => [row.lan, row.arbetsloshet])],
+        data: [
+          ["Län", "Arbetslöshet"],
+          ...sortedByUnemployment.map(row => [
+            row.lan,
+            { v: row.arbetsloshet, f: formatPercent(row.arbetsloshet) }
+          ])
+        ],
         options: {
           title: "Arbetslöshet per län (" + chosenYear + ")",
           legend: { position: "none" },
           height: 560,
           chartArea: { width: "82%", height: "70%" },
           hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { fontSize: 11 } },
-          vAxis: { title: "Arbetslöshet (%)", textStyle: { fontSize: 13 }, titleTextStyle: { fontSize: 15, bold: true }, viewWindow: { min: 0 } }
+          vAxis: {
+            title: "Arbetslöshet (%)",
+            format: "#'%'",
+            textStyle: { fontSize: 13 },
+            titleTextStyle: { fontSize: 15, bold: true },
+            viewWindow: { min: 0 }
+          }
         }
       });
 
@@ -227,23 +239,24 @@ Diagrammet visar arbetslösheten per län för det valda året. Län med högre 
           "Genomsnittlig arbetslöshet <strong>" + chosenGender + "</strong>, <strong>" + chosenYear + "</strong>: <strong>" + formatPercent(average(values)) + "</strong>",
           "Högst: <strong>" + highest.lan + "</strong> med <strong>" + formatPercent(highest.arbetsloshet) + "</strong>",
           "Lägst: <strong>" + lowest.lan + "</strong> med <strong>" + formatPercent(lowest.arbetsloshet) + "</strong>",
-          "Skillnad mellan högst och lägst: <strong>" + formatPercent(difference) + "</strong> — tydlig geografisk variation",
+          "Skillnad mellan högst och lägst: <strong>" + formatPercent(difference) + "</strong> - tydlig geografisk variation",
           "Resultatet stödjer hypotesen att arbetslösheten skiljer sig mellan län",
-          "Skillnader i arbetslöshet <strong>orsakar inte</strong> i sig hur människor röstar — bakomliggande faktorer som industristruktur och utbildning spelar roll"
+          "Skillnader i arbetslöshet <strong>orsakar inte</strong> i sig hur människor röstar - bakomliggande faktorer som industristruktur och utbildning spelar roll"
         ]));
       }
 
       addToPage(sectionBox("🔍", "Metod och begränsning", [
-        "Bygger på arbetslöshetsdata på <strong>länsnivå</strong> — inte kommunnivå",
+        "Bygger på arbetslöshetsdata på <strong>länsnivå</strong> - inte kommunnivå",
         "Skillnader inom ett och samma län kan inte fångas upp",
         "Samma länsvärde används för alla kommuner inom länet i nästa analys",
-        "Vissa värden är NULL i datan och filtreras bort — antalet län kan bli lägre än 21",
-        "Totalt-värdet är inte en summering av män och kvinnor utan ett eget totalvärde"
+        "Vissa värden är NULL i datan och filtreras bort - antalet län kan bli lägre än 21",
+        "Totalt-värdet är inte en summering av män och kvinnor utan ett eget totalvärde",
+        "<strong>OBS</strong> Östergötlands län finns inte med i diagrammet eftersom länet saknades helt från datasetet."
       ]));
 
       addToPage(sectionBox("⚠️", "Extremvärden", [
         "<strong>Södermanlands län</strong> har genomgående hög arbetslöshet och ligger klart över rikssnittet",
-        "<strong>Norrbottens</strong> och <strong>Västerbottens</strong> län har relativt låg arbetslöshet trots glesbygdskaraktär — tack vare stark offentlig sektor och basindustri",
+        "<strong>Norrbottens</strong> och <strong>Västerbottens</strong> län har relativt låg arbetslöshet trots glesbygdskaraktär - tack vare stark offentlig sektor och basindustri",
         "Dessa extremlän kan påverka genomsnittet och bör beaktas vid tolkning av diagrammet"
       ]));
     }

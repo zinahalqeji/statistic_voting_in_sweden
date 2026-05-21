@@ -225,7 +225,7 @@ Diagrammet visar genomsnittlig årsinkomst per län för det valda urvalet. Om e
         "Genomsnittlig inkomst för <strong>" + chosenGender + "</strong>, <strong>" + chosenCounty + "</strong>: <strong>" + formatIncome(average(incomes)) + "</strong>",
         "Högst genomsnittlig inkomst: <strong>" + highestCounty.lan + "</strong> med <strong>" + formatIncome(highestCounty.averageIncome) + "</strong>",
         "Lägst genomsnittlig inkomst: <strong>" + lowestCounty.lan + "</strong> med <strong>" + formatIncome(lowestCounty.averageIncome) + "</strong>",
-        "Storstadslänen — framför allt Stockholms län — dominerar toppen av inkomstligan",
+        "Storstadslänen - framför allt Stockholms län - dominerar toppen av inkomstligan",
         "Kommuner i norra Sverige och glesbygd återfinns konsekvent i botten",
         "Skillnaden bekräftar att inkomst inte är jämnt fördelad geografiskt"
       ]));
@@ -234,14 +234,14 @@ Diagrammet visar genomsnittlig årsinkomst per län för det valda urvalet. Om e
     addToPage(sectionBox("🔍", "Metod och begränsning", [
       "Bygger på <strong>genomsnittlig</strong> årsinkomst per kommun år 2022 (ej median)",
       "Höga inkomster hos ett fåtal kan dra upp snittet och ge en missvisande bild",
-      "Data från ett enskilt år (2022) — tillfälliga variationer kan påverka",
-      "Visar ekonomiska skillnader men inte varför de finns — arbetsmarknad, utbildning och bostadspriser spelar roll",
-      "Inkomst <strong>orsakar inte</strong> ett visst röstningsmönster — används som bakgrund inför kommande analyser"
+      "Data från ett enskilt år (2022) - tillfälliga variationer kan påverka",
+      "Visar ekonomiska skillnader men inte varför de finns - arbetsmarknad, utbildning och bostadspriser spelar roll",
+      "Inkomst <strong>orsakar inte</strong> ett visst röstningsmönster - används som bakgrund inför kommande analyser"
     ]));
 
     addToPage(sectionBox("⚠️", "Extremvärden", [
       "<strong>Danderyd</strong> och <strong>Lidingö</strong> i Stockholms län har exceptionellt höga inkomster och drar upp länets genomsnitt",
-      "Kommuner i Kalmar och Örebro län ligger klart under rikssnittet — präglat av glesbygd och begränsad arbetsmarknad",
+      "Kommuner i Kalmar och Örebro län ligger klart under rikssnittet - präglat av glesbygd och begränsad arbetsmarknad",
       "Ett fåtal extremkommuner kan påverka helhetsbilden påtagligt"
     ]));
   }

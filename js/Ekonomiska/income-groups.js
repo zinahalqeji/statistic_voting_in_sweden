@@ -202,7 +202,7 @@ else {
   const partyOptions = parties.map(party => displayPartyName(party));
   const counties = [...new Set(cleanedIncome.map(row => row.lan))].sort((a, b) => a.localeCompare(b, "sv"));
 
-  const chosenPartyDisplay = addDropdown("Välj parti:", partyOptions, displayPartyName(parties[0]));
+  const chosenPartyDisplay = addDropdown("Välj parti", partyOptions, displayPartyName(parties[0]));
   const chosenParty = parties.find(party => displayPartyName(party) === chosenPartyDisplay) || parties[0];
   const chosenPartyName = displayPartyName(chosenParty);
 
@@ -259,10 +259,31 @@ else {
 
       addMdToPage(`## Sammanfattning av urvalet`);
       addToPage(statCards([
-        { title: "Antal kommuner", value: numberOfMunicipalities },
-        { title: "Valt parti", value: chosenPartyName },
-        { title: "Starkast stöd", value: strongestGroup.group, note: formatPercent(strongestGroup.averageSupport) },
-        { title: "Skillnad hög minus låg", value: formatPercent(supportDifference), note: "hög inkomst jämfört med låg inkomst" }
+        {
+          title: "Antal kommuner",
+          value: numberOfMunicipalities
+        },
+        {
+          title: "Valt parti",
+          value: chosenPartyName
+        },
+        {
+          title: "Starkast stöd",
+          value: strongestGroup.group,
+          note: formatPercent(strongestGroup.averageSupport)
+        },
+        {
+          title: "Skillnad mellan inkomstgrupper",
+          value: `${Math.abs(supportDifference).toLocaleString("sv-SE", {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+          })} procentenheter`,
+          note: supportDifference < 0
+            ? "lägre stöd i höginkomstkommuner jämfört med låginkomstkommuner"
+            : supportDifference > 0
+              ? "högre stöd i höginkomstkommuner jämfört med låginkomstkommuner"
+              : "ungefär lika stort stöd i båda grupperna"
+        }
       ]));
 
       addMdToPage(`
@@ -273,14 +294,30 @@ Diagrammet visar genomsnittlig röstandel för **${chosenPartyName}** i kommuner
 
       drawGoogleChart({
         type: "ColumnChart",
-        data: [["Inkomstgrupp", "Stöd för " + chosenPartyName], ...groupStats.map(row => [row.group, row.averageSupport])],
+        data: [
+          ["Inkomstgrupp", "Stöd för " + chosenPartyName],
+          ...groupStats.map(row => [
+            row.group,
+            { v: row.averageSupport, f: formatPercent(row.averageSupport) }
+          ])
+        ],
         options: {
           title: "Genomsnittligt stöd för " + chosenPartyName + " per inkomstgrupp (" + chosenYear + ")",
           legend: { position: "none" },
           height: 520,
           chartArea: { width: "80%", height: "72%" },
-          hAxis: { textStyle: { fontSize: 13 } },
-          vAxis: { title: "Röstandel (%)", textStyle: { fontSize: 13 }, titleTextStyle: { fontSize: 15, bold: true }, viewWindow: { min: 0 } }
+
+          hAxis: {
+            textStyle: { fontSize: 13 }
+          },
+
+          vAxis: {
+            title: "Röstandel (%)",
+            format: "#'%'",
+            textStyle: { fontSize: 13 },
+            titleTextStyle: { fontSize: 15, bold: true },
+            viewWindow: { min: 0 }
+          }
         }
       });
 
@@ -311,12 +348,12 @@ Diagrammet visar genomsnittlig röstandel för **${chosenPartyName}** i kommuner
       addToPage(sectionBox("📊", "Resultat", [
         "<strong>" + strongestGroup.group + "</strong> har högst genomsnittligt stöd för <strong>" + chosenPartyName + "</strong>: <strong>" + formatPercent(strongestGroup.averageSupport) + "</strong>",
         differenceText + " Skillnad: <strong>" + formatPercent(supportDifference) + "</strong>",
-        "Inkomst <strong>orsakar inte</strong> hur människor röstar — utbildningsnivå, ålder och bostadsort påverkar både inkomst och röstbeteende"
+        "Inkomst <strong>orsakar inte</strong> hur människor röstar - utbildningsnivå, ålder och bostadsort påverkar både inkomst och röstbeteende"
       ]));
 
       addToPage(sectionBox("🔍", "Metod och begränsning", [
         "Kommunerna sorteras efter genomsnittlig inkomst och delas in i tre lika stora grupper",
-        "Inkomstvärdet kommer från 2022 — används även för valåret 2018",
+        "Inkomstvärdet kommer från 2022 - används även för valåret 2018",
         "Visar skillnader mellan grupper men bevisar inte kausalitet",
         "Faktorer som utbildning, ålder och migration kan också påverka resultatet"
       ]));
@@ -375,13 +412,13 @@ ${normalText}
 
 ${tResultText}
 
-> **Obs:** Statistisk signifikans innebär att skillnaden sannolikt inte beror på slumpen — inte att inkomst *orsakar* skillnaden i röstbeteende.
+> **Obs:** Statistisk signifikans innebär att skillnaden sannolikt inte beror på slumpen - inte att inkomst *orsakar* skillnaden i röstbeteende.
 `);
 
       addToPage(sectionBox("⚠️", "Extremvärden", [
         "<strong>Danderyd</strong> och <strong>Lidingö</strong> i höginkomstgruppen har exceptionellt höga inkomster och drar upp gruppens genomsnitt",
         "Låginkomstgruppen innehåller kommuner med mycket låga inkomster som drar ner snittet",
-        "Genomsnittet per grupp kan påverkas av extremvärden — skillnaderna kan se större ut än för en typisk kommun"
+        "Genomsnittet per grupp kan påverkas av extremvärden - skillnaderna kan se större ut än för en typisk kommun"
       ]));
     }
   }
