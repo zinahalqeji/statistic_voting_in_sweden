@@ -1,67 +1,19 @@
-import dbInfoOk, { displayDbNotOkText } from "./helper/dbInfoOk.js";
-
 addMdToPage(`
-  ## Kom igång!
-  Den här övningen syftar till att du ska lära dig arbeta med data från flera olika källor.
+
+# Slutsats
+
+Detta projekt har undersökt vilka faktorer som påverkar röstningsmönster i Sverige genom att analysera valresultaten från riksdagsvalen 2018 och 2022 tillsammans med socioekonomiska och geografiska variabler på kommun- och länsnivå.
+
+Analysen visar att politiska förändringar i Sverige inte sker slumpmässigt, utan samvarierar med flera tydliga samhällsfaktorer. Resultaten visar bland annat att kommuner med högre medianinkomst i större utsträckning tenderade att röra sig mot vänsterblocket mellan valåren. Samtidigt kunde skillnader observeras mellan olika typer av kommuner beroende på urbanisering, befolkningsstruktur och andel utrikes födda.
+
+Undersökningen visar även att sambandet mellan invandring och röstningsmönster varierar mellan olika partier. Vissa partier hade starkare stöd i kommuner med högre andel utrikes födda, medan andra partier uppvisade motsatt utveckling. Detta tyder på att demografiska faktorer kan påverka politiska preferenser, men också att sambanden är komplexa och skiljer sig mellan olika delar av landet.
+
+Den regionala analysen visade dessutom att Sveriges län utvecklades olika mellan valen 2018 och 2022. Flera län uppvisade tydliga rörelser mot högerblocket medan andra län utvecklades i motsatt riktning. Skillnaderna mellan storstadslän och mindre tätbefolkade län visar samtidigt att geografiska faktorer fortfarande har stor betydelse för väljarnas politiska beteende.
+
+Projektet visar därför att svensk politik påverkas av en kombination av ekonomiska, geografiska och demografiska faktorer. Resultaten pekar på att socioekonomiska skillnader mellan kommuner och regioner hänger samman med hur väljarnas politiska preferenser förändras över tid.
+
+Det är samtidigt viktigt att betona att analyserna bygger på statistiska samband och korrelationer. Resultaten kan därför inte fastställa direkta orsaksförhållanden, utan visar endast hur olika faktorer samvarierar med förändringar i röstningsmönster. Trots detta ger projektet en bred och tydlig bild av vilka samhällsfaktorer som verkar ha störst betydelse för röstning i Sverige.
+
+Sammanfattningsvis visar projektet att röstningsmönster i Sverige påverkas av flera samverkande faktorer där socioekonomi, urbanisering, regionala skillnader och demografiska förhållanden spelar en central roll i den politiska utvecklingen mellan valen 2018 och 2022.
+
 `);
-
-if (!dbInfoOk) {
-  displayDbNotOkText();
-}
-else {
-  addMdToPage(`
-  ### Starthjälp
-  * För att ge dig starthjälp med övningen visar vi nedan data från 4 olika databaser (varav två olika collections hämtade från MongoDB). Detta är datan du har tillgång till.
-  * När du tittat lite på datan (och kanske även på koden som hämtar den) kan du [läsa instruktionerna för övningen](#ovningsinstruktioner)!
-  `);
-
-  addMdToPage(`
-  ### Länsinfo, från SQlite
-  Info om våra 21 svenska län, bland annat hur tätbefolkade de är!
-  `);
-  dbQuery.use('counties-sqlite');
-  let countyInfo = await dbQuery('SELECT * FROM countyInfo');
-  tableFromData({ data: countyInfo });
-  console.log('countyInfo', countyInfo);
-
-
-  addMdToPage(`
-  ### Geografisk info, från MySQL
-  Var alla svenska tätorter finns på kartan. (Endast de 25 första av många poster.)
-  `);
-  dbQuery.use('geo-mysql');
-  let geoData = await dbQuery('SELECT * FROM geoData  ORDER BY latitude LIMIT 25');
-  tableFromData({ data: geoData.map(x => ({ ...x, position: JSON.stringify(x.position) })) });
-  console.log('geoData from mysql', geoData);
-
-  addMdToPage(`
-  ### Medel- och medianårsinkomst i tusentals kronor, per kommun, från MongoDB
-  (Endast de 25 första av många poster.)
-  `);
-  dbQuery.use('kommun-info-mongodb');
-  let income = await dbQuery.collection('incomeByKommun').find({}).limit(25);
-  tableFromData({ data: income });
-  console.log('income from mongodb', income);
-
-  addMdToPage(`
-  ### Medelålder, per kommun, från MongoDB
-  (Endast de 25 första av många poster.)
-  `);
-  dbQuery.use('kommun-info-mongodb');
-  let ages = await dbQuery.collection('ageByKommun').find({}).limit(25);
-  tableFromData({ data: ages });
-  console.log('ages from mongodb', ages);
-
-  addMdToPage(`
-  ### Valresultat från riksdagsvalen 2018 och 2022 uppdelade efter kommuner, från Neo4j
-  (Endast de 25 första av många poster.)
-  `);
-  dbQuery.use('riksdagsval-neo4j');
-  let electionResults = await dbQuery('MATCH (n:Partiresultat) RETURN n LIMIT 20 ');
-  tableFromData({
-    data: electionResults
-      // egenskaper/kolumner kommer i lite konstig ordning från Neo - mappa i trevligare ordning
-      .map(({ ids, kommun, roster2018, roster2022, parti, labels }) => ({ ids: ids.identity, kommun, roster2018, roster2022, parti, labels }))
-  });
-  console.log('electionResults from neo4j', electionResults);
-};

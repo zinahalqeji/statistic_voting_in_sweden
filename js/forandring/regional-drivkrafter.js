@@ -5,36 +5,40 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
-  // Intro
+  // ─── INTRO ───────────────────────────────────────────────────────────────
 
   addMdToPage(`
-# Socioekonomiska drivkrafter (kommunnivå, 2018–2022)
+# Regionala drivkrafter (kommunnivå, 2018–2022)
 
 <div style="
-background:#F1F5F9;
-padding:30px;
-border-radius:16px;
-margin-top:20px;
-border-left:8px solid #192c4e;
+  background:#F1F5F9;
+  padding:30px;
+  border-radius:16px;
+  margin-top:20px;
+  border-left:8px solid #192c4e;
 ">
 
 ## Hur hänger socioekonomi ihop med politiska skiften?
 
 Analysen kopplar samman:
 
-- Medianinkomst  
-- Medelålder  
-- Urbanisering (antal tätorter)  
+- Medianinkomst
+- Medelålder
+- Urbanisering (antal tätorter)
 
 med hur kommunernas politiska balans förändrades mellan riksdagsvalen 2018 och 2022.
 
 Det politiska skiftet mäts som förändringen i högerblockets röstandel
-(i procentenheter).
+(i procentenheter) mellan de två valen.
 
 </div>
+
+> **Metodnotering:** Korrelationskoefficienten (r) mäter styrkan på det linjära sambandet
+> mellan två variabler. r = 1 är perfekt positivt samband, r = -1 är perfekt negativt samband,
+> r = 0 betyder inget samband. r² visar hur stor andel av variationen som förklaras.
   `);
 
-  // Fixa kommun name issue in lanKommun data
+  // ─── HELPER FUNCTIONS ────────────────────────────────────────────────────
 
   function normalizeKommun(name) {
     return (name || "")
@@ -50,35 +54,61 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     return isNaN(n) ? 0 : n;
   }
 
-  // Block-listor för höger- och vänsterpartier (för att räkna röster per block)
+  function mean(arr) {
+    return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  }
+
+  function correlation(x, y) {
+    if (!x.length || !y.length || x.length !== y.length) return 0;
+    const n     = x.length;
+    const meanX = mean(x);
+    const meanY = mean(y);
+    let num = 0, dx2 = 0, dy2 = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = x[i] - meanX;
+      const dy = y[i] - meanY;
+      num += dx * dy;
+      dx2 += dx * dx;
+      dy2 += dy * dy;
+    }
+    const denom = Math.sqrt(dx2 * dy2);
+    return denom === 0 ? 0 : num / denom;
+  }
+
+  function korrelationBeskrivning(r) {
+    const abs = Math.abs(r);
+    if (abs >= 0.5) return "starkt";
+    if (abs >= 0.3) return "måttligt";
+    if (abs >= 0.1) return "svagt";
+    return "nästan inget";
+  }
+
+  function riktning(r) {
+    return r > 0 ? "mot höger" : "mot vänster";
+  }
+
+  // ─── BLOCK DEFINITIONS (Centerpartiet in höger — correct) ────────────────
 
   const hogerBlock = [
     "Moderaterna",
     "Kristdemokraterna",
     "Liberalerna",
-    "Sverigedemokraterna"
+    "Sverigedemokraterna",
+    "Centerpartiet"
   ];
 
   const vansterBlock = [
     "Socialdemokraterna",
     "Arbetarepartiet-Socialdemokraterna",
     "Vänsterpartiet",
-    "Miljöpartiet",
-    "Centerpartiet"
+    "Miljöpartiet"
   ];
 
-  // Neo4j-data innehåller röstningsresultat per kommun, parti och år – perfekt för att analysera politiska skiften på kommunnivå.
-
-  let electionRows = electionResults;
-  if (Array.isArray(electionRows)) {
-    electionRows = electionRows.map(r => r.n || r);
-  }
-
-  // Politiskt skifte per kommun: beräkna rörelse mot höger eller vänster mellan 2018 och 2022
+  // ─── POLITICAL SHIFT PER KOMMUN ──────────────────────────────────────────
 
   const kommunStats = new Map();
 
-  electionRows.forEach(row => {
+  electionResults.forEach(row => {
     const kommunKey = normalizeKommun(row.kommun);
     if (!kommunKey) return;
 
@@ -88,15 +118,13 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
         total2018: 0,
         total2022: 0,
         hoger2018: 0,
-        hoger2022: 0,
-        vanster2018: 0,
-        vanster2022: 0
+        hoger2022: 0
       });
     }
 
-    const stats = kommunStats.get(kommunKey);
-    const v2018 = safeNumber(row.roster2018);
-    const v2022 = safeNumber(row.roster2022);
+    const stats   = kommunStats.get(kommunKey);
+    const v2018   = safeNumber(row.roster2018);
+    const v2022   = safeNumber(row.roster2022);
 
     stats.total2018 += v2018;
     stats.total2022 += v2022;
@@ -104,11 +132,6 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     if (hogerBlock.includes(row.parti)) {
       stats.hoger2018 += v2018;
       stats.hoger2022 += v2022;
-    }
-
-    if (vansterBlock.includes(row.parti)) {
-      stats.vanster2018 += v2018;
-      stats.vanster2022 += v2022;
     }
   });
 
@@ -119,63 +142,55 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
 
     const hogerShare2018 = (stats.hoger2018 / stats.total2018) * 100;
     const hogerShare2022 = (stats.hoger2022 / stats.total2022) * 100;
-
-    const netShift = hogerShare2022 - hogerShare2018;
+    const netShift       = hogerShare2022 - hogerShare2018;
 
     kommunShift.push({
-      kommun: stats.kommun,
-      kommunKey: normalizeKommun(stats.kommun),
-      shift: netShift
+      kommun:     stats.kommun,
+      kommunKey:  normalizeKommun(stats.kommun),
+      shift:      netShift,
+      hoger2018:  hogerShare2018,
+      hoger2022:  hogerShare2022
     });
   });
 
-  // Socioekonomiska data: aggregera inkomster och ålder per kommun
+  // ─── SOCIOECONOMIC DATA — consistent year (2022) ──────────────────────────
 
   function aggregateIncome(data) {
     const map = new Map();
-
     data.forEach(row => {
       if ((row.kon || "").toLowerCase() !== "totalt") return;
-
-      const key = normalizeKommun(row.kommun);
-      const value = safeNumber(row.medelInkomst2021);
-
+      const key   = normalizeKommun(row.kommun);
+      const value = safeNumber(row.medelInkomst2022); // use 2022 consistently
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(value);
     });
-
     const result = {};
     map.forEach((values, key) => {
-      result[key] = values.reduce((a, b) => a + b, 0) / values.length;
+      result[key] = mean(values);
     });
     return result;
   }
 
   function aggregateAge(data) {
     const map = new Map();
-
     data.forEach(row => {
       if ((row.kon || "").toLowerCase() !== "totalt") return;
-
-      const key = normalizeKommun(row.kommun);
-      const value = safeNumber(row.medelalderAr2022);
-
+      const key   = normalizeKommun(row.kommun);
+      const value = safeNumber(row.medelalderAr2022); // use 2022 consistently
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(value);
     });
-
     const result = {};
     map.forEach((values, key) => {
-      result[key] = values.reduce((a, b) => a + b, 0) / values.length;
+      result[key] = mean(values);
     });
     return result;
   }
 
   const incomeAgg = aggregateIncome(income);
-  const ageAgg = aggregateAge(ages);
+  const ageAgg    = aggregateAge(ages);
 
-  // Urbanisering: räkna antal tätorter per kommun baserat på geoData (som innehåller alla tätorter och deras kommun)
-
+  // Urbanization: count localities per kommun
   const urbanAgg = {};
   geoData.forEach(row => {
     const key = normalizeKommun(row.municipality);
@@ -184,222 +199,210 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     urbanAgg[key] += 1;
   });
 
-  // Antal kommuner som har både politiskt skifte och socioekonomiska data
+  // ─── BUILD ANALYSIS DATASET ───────────────────────────────────────────────
 
   const analysis = kommunShift.map(r => {
     const key = r.kommunKey;
-
     return {
-      kommun: r.kommun,
-      shift: r.shift,
-      income: incomeAgg[key] || 0,
-      age: ageAgg[key] || 0,
-      urban: urbanAgg[key] || 0
+      kommun:   r.kommun,
+      shift:    r.shift,
+      hoger2018: r.hoger2018,
+      hoger2022: r.hoger2022,
+      income:   incomeAgg[key] || 0,
+      age:      ageAgg[key]    || 0,
+      urban:    urbanAgg[key]  || 0
     };
-  }).filter(r => r.income || r.age || r.urban);
+  }).filter(r => r.income > 0 && r.age > 0);
 
-  
-  // Korrelationer mellan socioekonomiska faktorer och politiskt skifte
+  // ─── CORRELATION CALCULATIONS ─────────────────────────────────────────────
 
-  function correlation(x, y) {
-    if (!x.length || !y.length) return 0;
-
-    const n = x.length;
-    const meanX = x.reduce((a, b) => a + b, 0) / n;
-    const meanY = y.reduce((a, b) => a + b, 0) / n;
-
-    let num = 0, dx2 = 0, dy2 = 0;
-
-    for (let i = 0; i < n; i++) {
-      const dx = x[i] - meanX;
-      const dy = y[i] - meanY;
-      num += dx * dy;
-      dx2 += dx * dx;
-      dy2 += dy * dy;
-    }
-
-    const denom = Math.sqrt(dx2 * dy2);
-    return denom === 0 ? 0 : num / denom;
-  }
-
-  const shifts = analysis.map(r => r.shift);
-
+  const shifts  = analysis.map(r => r.shift);
   const rIncome = correlation(analysis.map(r => r.income), shifts);
-  const rAge = correlation(analysis.map(r => r.age), shifts);
-  const rUrban = correlation(analysis.map(r => r.urban), shifts);
+  const rAge    = correlation(analysis.map(r => r.age),    shifts);
+  const rUrban  = correlation(analysis.map(r => r.urban),  shifts);
 
-  // KPI sammanfattning i tre färgkodade boxar
+  const rSqIncome = (rIncome ** 2 * 100).toFixed(1);
+  const rSqAge    = (rAge    ** 2 * 100).toFixed(1);
+  const rSqUrban  = (rUrban  ** 2 * 100).toFixed(1);
+
+  // ─── KPI CARDS — dynamic text based on actual r values ───────────────────
 
   addMdToPage(`
 <div style="
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-gap:20px;
-margin:30px 0;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:20px;
+  margin:30px 0;
 ">
 
-<div style="background:linear-gradient(135deg,#2563EB,#1D4ED8);padding:24px;border-radius:16px;color:white;">
-<h3>Inkomst ↔ Politiskt skifte</h3>
-<p style="font-size:32px;font-weight:bold;margin:8px 0;">${rIncome.toFixed(3)}</p>
-<p>Kommuner med högre inkomster tenderar att röra sig mer mot höger.</p>
+<div style="background:#2563EB;padding:24px;border-radius:16px;color:white;">
+  <div style="font-size:13px;opacity:0.8;">INKOMST ↔ POLITISKT SKIFTE</div>
+  <div style="font-size:32px;font-weight:bold;margin:8px 0;">r = ${rIncome.toFixed(3)}</div>
+  <div style="font-size:14px;opacity:0.85;">r² = ${rSqIncome}% — ${korrelationBeskrivning(rIncome)} samband</div>
+  <div style="font-size:13px;margin-top:8px;">Kommuner med högre inkomst tenderar att röra sig ${riktning(rIncome)}</div>
 </div>
 
-<div style="background:linear-gradient(135deg,#7C3AED,#5B21B6);padding:24px;border-radius:16px;color:white;">
-<h3>Medelålder ↔ Politiskt skifte</h3>
-<p style="font-size:32px;font-weight:bold;margin:8px 0;">${rAge.toFixed(3)}</p>
-<p>Åldersstruktur har ett svagare men mätbart samband med politiska skiften.</p>
+<div style="background:#7C3AED;padding:24px;border-radius:16px;color:white;">
+  <div style="font-size:13px;opacity:0.8;">MEDELÅLDER ↔ POLITISKT SKIFTE</div>
+  <div style="font-size:32px;font-weight:bold;margin:8px 0;">r = ${rAge.toFixed(3)}</div>
+  <div style="font-size:14px;opacity:0.85;">r² = ${rSqAge}% — ${korrelationBeskrivning(rAge)} samband</div>
+  <div style="font-size:13px;margin-top:8px;">Kommuner med högre medelålder tenderar att röra sig ${riktning(rAge)}</div>
 </div>
 
-<div style="background:linear-gradient(135deg,#059669,#047857);padding:24px;border-radius:16px;color:white;">
-<h3>Urbanitet ↔ Politiskt skifte</h3>
-<p style="font-size:32px;font-weight:bold;margin:8px 0;">${rUrban.toFixed(3)}</p>
-<p>Kommuner med fler tätorter uppvisar större variation i politiska förändringar.</p>
+<div style="background:#059669;padding:24px;border-radius:16px;color:white;">
+  <div style="font-size:13px;opacity:0.8;">URBANITET ↔ POLITISKT SKIFTE</div>
+  <div style="font-size:32px;font-weight:bold;margin:8px 0;">r = ${rUrban.toFixed(3)}</div>
+  <div style="font-size:14px;opacity:0.85;">r² = ${rSqUrban}% — ${korrelationBeskrivning(rUrban)} samband</div>
+  <div style="font-size:13px;margin-top:8px;">Kommuner med fler tätorter tenderar att röra sig ${riktning(rUrban)}</div>
 </div>
 
 </div>
   `);
 
-  addMdToPage(`## Socioekonomisk profil – tre tydliga samband`);
+  // ─── SCATTER CHARTS — one per factor ─────────────────────────────────────
 
-function drawMiniScatter(title, xField, xLabel, color) {
-  const data = [
-    [xLabel, "Politiskt skifte (p.e.)", { role: "tooltip" }]
-  ];
+  addMdToPage(`## Socioekonomisk profil – tre samband med politiskt skifte`);
 
-  analysis.forEach(row => {
-    const tooltip = `
-Kommun: ${row.kommun}
-${xLabel}: ${row[xField]}
-Politiskt skifte: ${row.shift.toFixed(2)} p.e.
-`;
-    data.push([row[xField], row.shift, tooltip]);
-  });
+  function drawScatter(title, xField, xLabel, color) {
+    const data = [[xLabel, "Politiskt skifte (p.e.)", { role: "tooltip" }]];
+    analysis.forEach(row => {
+      data.push([
+        row[xField],
+        row.shift,
+        `Kommun: ${row.kommun}\n${xLabel}: ${row[xField]}\nSkifte: ${row.shift.toFixed(2)} p.e.`
+      ]);
+    });
 
-  drawGoogleChart({
-    type: "ScatterChart",
-    data,
-    options: {
-      title,
-      height: 350,
-      pointSize: 5,
-      colors: [color],
-      legend: "none",
-      chartArea: { left: 60, right: 20, top: 50, bottom: 60 },
-      hAxis: { title: xLabel },
-      vAxis: { title: "Politiskt skifte (p.e.)" },
-      trendlines: {
-        0: { type: "linear", color: "#111827", lineWidth: 2, opacity: 0.4 }
+    drawGoogleChart({
+      type: "ScatterChart",
+      data,
+      options: {
+        title,
+        height: 380,
+        pointSize: 5,
+        colors: [color],
+        legend: "none",
+        chartArea: { left: 70, right: 20, top: 50, bottom: 60 },
+        hAxis: { title: xLabel },
+        vAxis: { title: "Politiskt skifte (p.e.)" },
+        trendlines: {
+          0: { type: "linear", color: "#111827", lineWidth: 2, opacity: 0.4 }
+        }
       }
-    }
-  });
-}
+    });
+  }
 
-addMdToPage(`
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:20px;margin-top:20px;">
-  <div id="chart_income"></div>
-  <div id="chart_age"></div>
-  <div id="chart_urban"></div>
-</div>
-`);
+  drawScatter(
+    `Inkomst ↔ Politiskt skifte (r = ${rIncome.toFixed(3)}, r² = ${rSqIncome}%)`,
+    "income", "Medelinkomst 2022 (tkr)", "#2563EB"
+  );
 
-drawMiniScatter("Inkomst ↔ Politiskt skifte", "income", "Medianinkomst (tkr)", "#2563EB");
-drawMiniScatter("Medelålder ↔ Politiskt skifte", "age", "Medelålder (år)", "#7C3AED");
-drawMiniScatter("Urbanitet ↔ Politiskt skifte", "urban", "Antal tätorter", "#059669");
+  drawScatter(
+    `Medelålder ↔ Politiskt skifte (r = ${rAge.toFixed(3)}, r² = ${rSqAge}%)`,
+    "age", "Medelålder 2022 (år)", "#7C3AED"
+  );
 
-  // Topp 10 kommuner som rört sig mest mot höger och vänster, med socioekonomisk profil
+  drawScatter(
+    `Urbanitet ↔ Politiskt skifte (r = ${rUrban.toFixed(3)}, r² = ${rSqUrban}%)`,
+    "urban", "Antal tätorter", "#059669"
+  );
 
-  const sortedByShift = [...analysis].sort((a, b) => b.shift - a.shift);
-  const topRight = sortedByShift.slice(0, 10);
-  const topLeft = sortedByShift.slice(-10).reverse();
+  // ─── TOP 10 TABLES ────────────────────────────────────────────────────────
 
   addMdToPage(`## Kommuner med störst politiskt skifte`);
 
-  const topRightTable = topRight.map(r => ({
-    "Kommun": r.kommun,
-    "Skifte mot höger (p.e.)": r.shift.toFixed(2),
-    "Medianinkomst (tkr)": Math.round(r.income),
-    "Medelålder (år)": r.age.toFixed(1),
-    "Urbanitet (tätorter)": r.urban
-  }));
-
-  const topLeftTable = topLeft.map(r => ({
-    "Kommun": r.kommun,
-    "Skifte mot vänster (p.e.)": r.shift.toFixed(2),
-    "Medianinkomst (tkr)": Math.round(r.income),
-    "Medelålder (år)": r.age.toFixed(1),
-    "Urbanitet (tätorter)": r.urban
-  }));
+  const sortedByShift = [...analysis].sort((a, b) => b.shift - a.shift);
+  const topRight      = sortedByShift.slice(0, 10);
+  const topLeft       = sortedByShift.slice(-10).reverse();
 
   addMdToPage(`### Störst rörelse mot höger (Top 10)`);
 
   tableFromData({
-    data: topRightTable,
+    data: topRight.map(r => ({
+      "Kommun":                  r.kommun,
+      "Höger 2018 (%)":          r.hoger2018.toFixed(1),
+      "Höger 2022 (%)":          r.hoger2022.toFixed(1),
+      "Skifte mot höger (p.e.)": "+" + r.shift.toFixed(2),
+      "Medelinkomst 2022 (tkr)": Math.round(r.income),
+      "Medelålder 2022 (år)":    r.age.toFixed(1),
+      "Antal tätorter":          r.urban
+    })),
     columnNames: [
-      "Kommun",
-      "Skifte mot höger (p.e.)",
-      "Medianinkomst (tkr)",
-      "Medelålder (år)",
-      "Urbanitet (tätorter)"
+      "Kommun", "Höger 2018 (%)", "Höger 2022 (%)",
+      "Skifte mot höger (p.e.)", "Medelinkomst 2022 (tkr)",
+      "Medelålder 2022 (år)", "Antal tätorter"
     ],
-    fixedHeader: false
+    fixedHeader: true
   });
 
   addMdToPage(`### Störst rörelse mot vänster (Top 10)`);
 
   tableFromData({
-    data: topLeftTable,
+    data: topLeft.map(r => ({
+      "Kommun":                   r.kommun,
+      "Höger 2018 (%)":           r.hoger2018.toFixed(1),
+      "Höger 2022 (%)":           r.hoger2022.toFixed(1),
+      "Skifte mot vänster (p.e.)": r.shift.toFixed(2),
+      "Medelinkomst 2022 (tkr)":  Math.round(r.income),
+      "Medelålder 2022 (år)":     r.age.toFixed(1),
+      "Antal tätorter":           r.urban
+    })),
     columnNames: [
-      "Kommun",
-      "Skifte mot vänster (p.e.)",
-      "Medianinkomst (tkr)",
-      "Medelålder (år)",
-      "Urbanitet (tätorter)"
+      "Kommun", "Höger 2018 (%)", "Höger 2022 (%)",
+      "Skifte mot vänster (p.e.)", "Medelinkomst 2022 (tkr)",
+      "Medelålder 2022 (år)", "Antal tätorter"
     ],
-    fixedHeader: false
+    fixedHeader: true
   });
 
-  // Kort sammanfattning av de statistiska sambanden
+  // ─── STATISTICAL INTERPRETATION ──────────────────────────────────────────
 
   addMdToPage(`
-
 ## Statistisk tolkning
 
-- **Inkomst** har ett tydligt positivt samband med politiskt skifte mot höger.  
-- **Medelålder** visar ett svagare samband – äldre kommuner tenderar något mer mot stabilitet.  
-- **Urbanitet** (antal tätorter) hänger ihop med större variation i politiska förändringar.
+| Faktor | r | r² | Samband | Riktning |
+|---|---|---|---|---|
+| Medelinkomst | ${rIncome.toFixed(3)} | ${rSqIncome}% | ${korrelationBeskrivning(rIncome)} | ${riktning(rIncome)} |
+| Medelålder | ${rAge.toFixed(3)} | ${rSqAge}% | ${korrelationBeskrivning(rAge)} | ${riktning(rAge)} |
+| Urbanitet | ${rUrban.toFixed(3)} | ${rSqUrban}% | ${korrelationBeskrivning(rUrban)} | ${riktning(rUrban)} |
 
-Korrelationerna beskriver statistiska samband – inte direkta orsaker – men ger en tydlig bild av hur socioekonomiska mönster och politiska skiften samvarierar på kommunnivå.
+**r** = korrelationskoefficient (styrkan på sambandet)
+**r²** = förklaringsgrad (hur stor andel av variationen i politiskt skifte som förklaras av faktorn)
 
+Korrelationerna beskriver statistiska samband på kommunnivå — inte direkta orsaker.
   `);
 
-// Slutsats
+  // ─── SLUTSATS ─────────────────────────────────────────────────────────────
 
-addMdToPage(`
+  addMdToPage(`
 <div style="
-background:#F8FAFC;
-padding:30px;
-border-radius:18px;
-margin-top:35px;
-border-left:8px solid #192c4e;
+  background:#F8FAFC;
+  padding:30px;
+  border-radius:18px;
+  margin-top:35px;
+  border-left:8px solid #192c4e;
 ">
 
 ## Slutsats
 
-Analysen visar att socioekonomiska faktorer har tydliga samband med hur kommunerna förändrade sin politiska inriktning mellan 2018 och 2022.
+Analysen av ${analysis.length} kommuner visar att socioekonomiska faktorer har
+**${korrelationBeskrivning(rIncome)}** samband med politiska skiften mellan 2018 och 2022.
 
-### 🔹 Inkomst
-Kommuner med högre medianinkomst uppvisade ett politiskt skifte på **${rIncome.toFixed(3)}%**, vilket innebär ett tydligt samband mellan ekonomisk nivå och rörelse mot högerblocket.
+- **Medelinkomst** (r = ${rIncome.toFixed(3)}, r² = ${rSqIncome}%): ${korrelationBeskrivning(rIncome)} samband —
+  inkomst förklarar ${rSqIncome}% av variationen i politiskt skifte
+- **Medelålder** (r = ${rAge.toFixed(3)}, r² = ${rSqAge}%): ${korrelationBeskrivning(rAge)} samband —
+  åldersstruktur förklarar ${rSqAge}% av variationen
+- **Urbanitet** (r = ${rUrban.toFixed(3)}, r² = ${rSqUrban}%): ${korrelationBeskrivning(rUrban)} samband —
+  antal tätorter förklarar ${rSqUrban}% av variationen
 
-### 🔹 Medelålder
-Sambandet mellan medelålder och politiskt skifte var **${rAge.toFixed(3)}%**, vilket visar ett svagare men fortfarande mätbart samband.
+De återstående procentandelarna förklaras av andra faktorer som analyseras i
+projektets övriga sektioner — utbildning, demografi och geografisk plats.
 
-### 🔹 Urbanitet
-Urbaniseringsgraden (antal tätorter) hade ett samband på **${rUrban.toFixed(3)}%**, vilket tyder på att mer urbana kommuner uppvisar större variation i politiska förändringar.
-
-### Sammanfattning
-Dessa procentvärden visar att socioekonomiska faktorer inte bara varierar mellan kommuner – de samvarierar också med hur väljarnas politiska preferenser förändrades över tid.
+**Viktig begränsning:** Dessa samband gäller på kommunnivå. Individuella väljardata
+skulle krävas för att dra slutsatser om enskilda personers röstbeteende.
 
 </div>
-`);
+
+  `);
 
 }
