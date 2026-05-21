@@ -1,11 +1,7 @@
 import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 
 function normalize(value) {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+  return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
 function normalizeGender(value) {
@@ -16,10 +12,7 @@ function normalizeGender(value) {
 }
 
 function displayPartyName(party) {
-  const names = {
-    "Arbetarepartiet-Socialdemokraterna": "Socialdemokraterna",
-    "Miljöpartiet de gröna": "Miljöpartiet"
-  };
+  const names = { "Arbetarepartiet-Socialdemokraterna": "Socialdemokraterna", "Miljöpartiet de gröna": "Miljöpartiet" };
   return names[party] || party;
 }
 
@@ -66,13 +59,21 @@ function infoBox(title, text) {
   `;
 }
 
+function sectionBox(icon, title, bullets) {
+  const items = bullets.map(b => `<li style="margin-bottom:6px;">${b}</li>`).join("");
+  return `
+    <div style="background:white; border-radius:8px; border:0.5px solid rgba(0,0,0,0.1); padding:16px 20px; margin:16px 0;">
+      <p style="margin:0 0 10px 0; font-size:16px; font-weight:500;">${icon} ${title}</p>
+      <ul style="margin:0; padding-left:20px; font-size:15px; line-height:1.8;">${items}</ul>
+    </div>
+  `;
+}
+
 function loadingBox() {
   return `
     <div id="loading-message" style="background:white; border-left:5px solid #2f5d50; padding:20px 22px; border-radius:8px; margin:22px 0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
       <h3 style="margin:0 0 8px 0; font-size:19px;">Laddar analysen...</h3>
-      <p style="margin:0; line-height:1.6; font-size:16px;">
-        Hämtar inkomstdata, valresultat och kommunernas länskoppling. Diagram och tabeller visas strax.
-      </p>
+      <p style="margin:0; line-height:1.6; font-size:16px;">Hämtar inkomstdata, valresultat och kommunernas länskoppling. Diagram och tabeller visas strax.</p>
     </div>
   `;
 }
@@ -82,10 +83,7 @@ function removeLoadingBox() {
   if (el) el.remove();
 }
 
-// =====================================================
 // T-TEST HJÄLPFUNKTIONER
-// =====================================================
-
 function variance(values) {
   const avg = average(values);
   const nums = values.filter(v => Number.isFinite(v));
@@ -93,40 +91,32 @@ function variance(values) {
   return nums.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / (nums.length - 1);
 }
 
-function stdDev(values) {
-  return Math.sqrt(variance(values));
-}
+function stdDev(values) { return Math.sqrt(variance(values)); }
 
 function skewness(values) {
   const nums = values.filter(v => Number.isFinite(v));
   const n = nums.length;
   if (n < 3) return null;
-  const avg = average(nums);
-  const sd = stdDev(nums);
+  const avg = average(nums), sd = stdDev(nums);
   if (sd === 0) return null;
   const sum = nums.reduce((acc, v) => acc + Math.pow((v - avg) / sd, 3), 0);
   return (n / ((n - 1) * (n - 2))) * sum;
 }
 
 function tTest(group1, group2) {
-  const n1 = group1.length;
-  const n2 = group2.length;
+  const n1 = group1.length, n2 = group2.length;
   if (n1 < 2 || n2 < 2) return null;
-  const mean1 = average(group1);
-  const mean2 = average(group2);
-  const var1 = variance(group1);
-  const var2 = variance(group2);
+  const mean1 = average(group1), mean2 = average(group2);
+  const var1 = variance(group1), var2 = variance(group2);
   const se = Math.sqrt(var1 / n1 + var2 / n2);
   if (se === 0) return null;
   const t = (mean1 - mean2) / se;
-  const df = Math.pow(var1 / n1 + var2 / n2, 2) /
-    (Math.pow(var1 / n1, 2) / (n1 - 1) + Math.pow(var2 / n2, 2) / (n2 - 1));
+  const df = Math.pow(var1 / n1 + var2 / n2, 2) / (Math.pow(var1 / n1, 2) / (n1 - 1) + Math.pow(var2 / n2, 2) / (n2 - 1));
   return { t, df: Math.round(df) };
 }
 
 function normalCDF(z) {
-  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
-  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
   const sign = z < 0 ? -1 : 1;
   const x = Math.abs(z) / Math.sqrt(2);
   const t = 1 / (1 + p * x);
@@ -137,8 +127,7 @@ function normalCDF(z) {
 function approximatePValue(tVal, df) {
   const abst = Math.abs(tVal);
   if (df > 30) return 2 * (1 - normalCDF(abst));
-  const x = df / (df + abst * abst);
-  return Math.min(2 * 0.5 * Math.pow(x, df / 2), 1);
+  return Math.min(2 * 0.5 * Math.pow(df / (df + abst * abst), df / 2), 1);
 }
 
 function createIncomeGroups(data) {
@@ -151,10 +140,6 @@ function createIncomeGroups(data) {
     return { ...row, incomeGroup: group };
   });
 }
-
-// =====================================================
-// SIDANS INTRODUKTION
-// =====================================================
 
 addMdToPage(`
 # Hög vs låg inkomst
@@ -184,17 +169,9 @@ else {
 
   removeLoadingBox();
 
-  const incomeData = Array.isArray(incomeResult)
-    ? incomeResult
-    : incomeResult?.data || incomeResult?.result || incomeResult?.documents || [];
-
-  const lanKommun = Array.isArray(lanKommunResult)
-    ? lanKommunResult
-    : lanKommunResult?.data || lanKommunResult?.result || [];
-
-  const electionResults = Array.isArray(electionResult)
-    ? electionResult
-    : electionResult?.data || electionResult?.result || [];
+  const incomeData = Array.isArray(incomeResult) ? incomeResult : incomeResult?.data || incomeResult?.result || incomeResult?.documents || [];
+  const lanKommun = Array.isArray(lanKommunResult) ? lanKommunResult : lanKommunResult?.data || lanKommunResult?.result || [];
+  const electionResults = Array.isArray(electionResult) ? electionResult : electionResult?.data || electionResult?.result || [];
 
   function getCounty(row) {
     const kommunName = normalize(row.kommun);
@@ -203,21 +180,11 @@ else {
   }
 
   const cleanedIncome = incomeData
-    .map(row => ({
-      kommun: row.kommun,
-      kon: normalizeGender(row.kon),
-      lan: getCounty(row),
-      inkomst2022: toNumber(row.medelInkomst2022)
-    }))
+    .map(row => ({ kommun: row.kommun, kon: normalizeGender(row.kon), lan: getCounty(row), inkomst2022: toNumber(row.medelInkomst2022) }))
     .filter(row => row.kommun && row.lan !== "Okänt län" && row.inkomst2022 !== null);
 
   const cleanedElection = electionResults
-    .map(row => ({
-      kommun: row.kommun,
-      parti: row.parti,
-      roster2018: toNumber(row.roster2018),
-      roster2022: toNumber(row.roster2022)
-    }))
+    .map(row => ({ kommun: row.kommun, parti: row.parti, roster2018: toNumber(row.roster2018), roster2022: toNumber(row.roster2022) }))
     .filter(row => row.kommun && row.parti && row.roster2018 !== null && row.roster2022 !== null);
 
   function buildTotalVotesMap(year) {
@@ -231,13 +198,9 @@ else {
     return map;
   }
 
-  const parties = [...new Set(cleanedElection.map(row => row.parti))]
-    .sort((a, b) => displayPartyName(a).localeCompare(displayPartyName(b), "sv"));
-
+  const parties = [...new Set(cleanedElection.map(row => row.parti))].sort((a, b) => displayPartyName(a).localeCompare(displayPartyName(b), "sv"));
   const partyOptions = parties.map(party => displayPartyName(party));
-
-  const counties = [...new Set(cleanedIncome.map(row => row.lan))]
-    .sort((a, b) => a.localeCompare(b, "sv"));
+  const counties = [...new Set(cleanedIncome.map(row => row.lan))].sort((a, b) => a.localeCompare(b, "sv"));
 
   const chosenPartyDisplay = addDropdown("Välj parti:", partyOptions, displayPartyName(parties[0]));
   const chosenParty = parties.find(party => displayPartyName(party) === chosenPartyDisplay) || parties[0];
@@ -250,10 +213,7 @@ else {
   const selectedGender = normalizeGender(chosenGender);
   const totalVotesMap = buildTotalVotesMap(chosenYear);
 
-  addToPage(infoBox(
-    "Analysens hypotes",
-    "Vi undersöker om stödet för " + chosenPartyName + " skiljer sig mellan låg-, medel- och höginkomstkommuner. Vår hypotes är att olika inkomstgrupper kan visa olika röstningsmönster, eftersom ekonomiska förutsättningar kan påverka vilka politiska frågor som blir viktiga för väljare."
-  ));
+  addToPage(infoBox("Analysens hypotes", "Vi undersöker om stödet för " + chosenPartyName + " skiljer sig mellan låg-, medel- och höginkomstkommuner. Vår hypotes är att olika inkomstgrupper kan visa olika röstningsmönster."));
 
   const filteredIncome = cleanedIncome.filter(row => {
     const genderMatch = row.kon === selectedGender;
@@ -264,45 +224,24 @@ else {
   const numberOfMunicipalities = new Set(filteredIncome.map(row => row.kommun)).size;
 
   if (numberOfMunicipalities < 3) {
-    addMdToPage(`
-## Resultat
-
-Det valda urvalet innehåller endast **${numberOfMunicipalities}** kommun. För att kunna jämföra låg, medel och hög inkomst behövs minst tre kommuner.
-
-Välj **Alla län** eller ett län med fler kommuner för att se gruppjämförelsen.
-`);
+    addMdToPage(`## Resultat\n\nDet valda urvalet innehåller endast **${numberOfMunicipalities}** kommun. Behövs minst tre kommuner. Välj **Alla län** för att se gruppjämförelsen.`);
   }
   else {
     const groupedIncome = createIncomeGroups(filteredIncome);
 
     const mergedData = groupedIncome
       .map(incomeRow => {
-        const electionRow = cleanedElection.find(voteRow =>
-          normalize(voteRow.kommun) === normalize(incomeRow.kommun) &&
-          voteRow.parti === chosenParty
-        );
+        const electionRow = cleanedElection.find(voteRow => normalize(voteRow.kommun) === normalize(incomeRow.kommun) && voteRow.parti === chosenParty);
         if (!electionRow) return null;
         const totalVotes = totalVotesMap.get(normalize(incomeRow.kommun));
         const partyVotes = chosenYear === "2018" ? electionRow.roster2018 : electionRow.roster2022;
         if (!totalVotes || totalVotes === 0) return null;
-        return {
-          kommun: incomeRow.kommun,
-          lan: incomeRow.lan,
-          kon: incomeRow.kon,
-          incomeGroup: incomeRow.incomeGroup,
-          inkomst2022: incomeRow.inkomst2022,
-          partyVotes,
-          partyShare: (partyVotes / totalVotes) * 100
-        };
+        return { kommun: incomeRow.kommun, lan: incomeRow.lan, incomeGroup: incomeRow.incomeGroup, inkomst2022: incomeRow.inkomst2022, partyVotes, partyShare: (partyVotes / totalVotes) * 100 };
       })
       .filter(row => row !== null);
 
     if (!mergedData.length) {
-      addMdToPage(`
-## Resultat
-
-Det finns ingen kopplad data för det valda urvalet.
-`);
+      addMdToPage(`## Resultat\n\nDet finns ingen kopplad data för det valda urvalet.`);
     }
     else {
 
@@ -310,12 +249,7 @@ Det finns ingen kopplad data för det valda urvalet.
 
       const groupStats = groupOrder.map(group => {
         const rows = mergedData.filter(row => row.incomeGroup === group);
-        return {
-          group,
-          count: rows.length,
-          averageIncome: average(rows.map(row => row.inkomst2022)),
-          averageSupport: average(rows.map(row => row.partyShare))
-        };
+        return { group, count: rows.length, averageIncome: average(rows.map(row => row.inkomst2022)), averageSupport: average(rows.map(row => row.partyShare)) };
       });
 
       const lowestGroup = groupStats[0];
@@ -323,10 +257,7 @@ Det finns ingen kopplad data för det valda urvalet.
       const supportDifference = highestGroup.averageSupport - lowestGroup.averageSupport;
       const strongestGroup = [...groupStats].sort((a, b) => b.averageSupport - a.averageSupport)[0];
 
-      addMdToPage(`
-## Sammanfattning av urvalet
-`);
-
+      addMdToPage(`## Sammanfattning av urvalet`);
       addToPage(statCards([
         { title: "Antal kommuner", value: numberOfMunicipalities },
         { title: "Valt parti", value: chosenPartyName },
@@ -342,29 +273,18 @@ Diagrammet visar genomsnittlig röstandel för **${chosenPartyName}** i kommuner
 
       drawGoogleChart({
         type: "ColumnChart",
-        data: [
-          ["Inkomstgrupp", "Stöd för " + chosenPartyName],
-          ...groupStats.map(row => [row.group, row.averageSupport])
-        ],
+        data: [["Inkomstgrupp", "Stöd för " + chosenPartyName], ...groupStats.map(row => [row.group, row.averageSupport])],
         options: {
           title: "Genomsnittligt stöd för " + chosenPartyName + " per inkomstgrupp (" + chosenYear + ")",
           legend: { position: "none" },
           height: 520,
           chartArea: { width: "80%", height: "72%" },
           hAxis: { textStyle: { fontSize: 13 } },
-          vAxis: {
-            title: "Röstandel (%)",
-            textStyle: { fontSize: 13 },
-            titleTextStyle: { fontSize: 15, bold: true },
-            viewWindow: { min: 0 }
-          }
+          vAxis: { title: "Röstandel (%)", textStyle: { fontSize: 13 }, titleTextStyle: { fontSize: 15, bold: true }, viewWindow: { min: 0 } }
         }
       });
 
-      addMdToPage(`
-## Jämförelse mellan inkomstgrupper
-`);
-
+      addMdToPage(`## Jämförelse mellan inkomstgrupper`);
       tableFromData({
         data: groupStats.map(row => ({
           Inkomstgrupp: row.group,
@@ -374,57 +294,34 @@ Diagrammet visar genomsnittlig röstandel för **${chosenPartyName}** i kommuner
         }))
       });
 
-      addMdToPage(`
-## Exempel på kommuner i varje inkomstgrupp
-`);
-
+      addMdToPage(`## Exempel på kommuner i varje inkomstgrupp`);
       const exampleRows = groupOrder.flatMap(group =>
-        mergedData
-          .filter(row => row.incomeGroup === group)
-          .sort((a, b) => b.partyShare - a.partyShare)
-          .slice(0, 3)
-          .map(row => ({
-            Inkomstgrupp: group,
-            Kommun: row.kommun,
-            Län: row.lan,
-            Inkomst: formatIncome(row.inkomst2022),
-            ["Stöd för " + chosenPartyName]: formatPercent(row.partyShare)
-          }))
+        mergedData.filter(row => row.incomeGroup === group).sort((a, b) => b.partyShare - a.partyShare).slice(0, 3)
+          .map(row => ({ Inkomstgrupp: group, Kommun: row.kommun, Län: row.lan, Inkomst: formatIncome(row.inkomst2022), ["Stöd för " + chosenPartyName]: formatPercent(row.partyShare) }))
       );
-
       tableFromData({ data: exampleRows });
 
-      let differenceText = "";
-      if (supportDifference > 0) {
-        differenceText = "Stödet för " + chosenPartyName + " är högre i höginkomstkommuner än i låginkomstkommuner i detta urval.";
-      } else if (supportDifference < 0) {
-        differenceText = "Stödet för " + chosenPartyName + " är lägre i höginkomstkommuner än i låginkomstkommuner i detta urval.";
-      } else {
-        differenceText = "Stödet för " + chosenPartyName + " är ungefär lika stort i höginkomstkommuner och låginkomstkommuner i detta urval.";
-      }
+      let differenceText = supportDifference > 0
+        ? "Stödet för " + chosenPartyName + " är högre i höginkomstkommuner än i låginkomstkommuner."
+        : supportDifference < 0
+          ? "Stödet för " + chosenPartyName + " är lägre i höginkomstkommuner än i låginkomstkommuner."
+          : "Stödet är ungefär lika stort i båda grupperna.";
 
-      addMdToPage(`
-## Kort analys
+      addMdToPage(`## Kort analys`);
+      addToPage(sectionBox("📊", "Resultat", [
+        "<strong>" + strongestGroup.group + "</strong> har högst genomsnittligt stöd för <strong>" + chosenPartyName + "</strong>: <strong>" + formatPercent(strongestGroup.averageSupport) + "</strong>",
+        differenceText + " Skillnad: <strong>" + formatPercent(supportDifference) + "</strong>",
+        "Inkomst <strong>orsakar inte</strong> hur människor röstar — utbildningsnivå, ålder och bostadsort påverkar både inkomst och röstbeteende"
+      ]));
 
-För urvalet **${chosenGender}**, **${chosenCounty}**, **${chosenYear}** visar analysen att **${strongestGroup.group}** har högst genomsnittligt stöd för **${chosenPartyName}** med **${formatPercent(strongestGroup.averageSupport)}**.
+      addToPage(sectionBox("🔍", "Metod och begränsning", [
+        "Kommunerna sorteras efter genomsnittlig inkomst och delas in i tre lika stora grupper",
+        "Inkomstvärdet kommer från 2022 — används även för valåret 2018",
+        "Visar skillnader mellan grupper men bevisar inte kausalitet",
+        "Faktorer som utbildning, ålder och migration kan också påverka resultatet"
+      ]));
 
-${differenceText} Skillnaden mellan höginkomstgruppen och låginkomstgruppen är **${formatPercent(supportDifference)}**.
-
-Resultatet ger en tydligare jämförelse än enbart ett spridningsdiagram, eftersom kommunerna delas in i grupper. Det är dock viktigt att notera att även om ett mönster syns mellan inkomstgrupper, så *orsakar* inte inkomsten hur människor röstar. Bakomliggande faktorer som utbildningsnivå, ålder och bostadsort kan påverka både inkomst och röstbeteende samtidigt, vilket gör det svårt att isolera inkomstens enskilda effekt.
-
-## Metod och begränsning
-
-Kommunerna sorteras efter genomsnittlig inkomst och delas sedan in i tre ungefär lika stora grupper: låg inkomst, medelinkomst och hög inkomst. Därefter beräknas genomsnittligt stöd för det valda partiet i varje grupp.
-
-Inkomstvärdet kommer från 2022 och används även när användaren väljer valåret 2018. Det betyder att analysen för 2018 inte visar inkomsten exakt vid det valet, utan använder samma inkomstmått som jämförelsepunkt.
-
-Analysen visar skillnader mellan grupper, men den bevisar inte att inkomst orsakar ett visst röstningsmönster. Andra faktorer som utbildning, ålder, migration, arbetslöshet och geografisk plats kan också påverka hur människor röstar.
-`);
-
-      // =====================================================
-      // T-TEST: LÅGINKOMST VS HÖGINKOMST
-      // =====================================================
-
+      // T-TEST
       const lowGroup = mergedData.filter(row => row.incomeGroup === "Låg inkomst").map(row => row.partyShare);
       const highGroup = mergedData.filter(row => row.incomeGroup === "Hög inkomst").map(row => row.partyShare);
 
@@ -438,7 +335,7 @@ Analysen visar skillnader mellan grupper, men den bevisar inte att inkomst orsak
       const significant = pValue !== null && pValue < 0.05;
 
       const normalText = (!normalLow || !normalHigh)
-        ? "En eller båda grupperna avviker från normalfördelning. Eftersom stickproven är stora (n > 30) är T-testet ändå robust enligt centrala gränsvärdessatsen, men resultatet bör tolkas med viss försiktighet."
+        ? "En eller båda grupperna avviker från normalfördelning. Eftersom stickproven är stora (n > 30) är T-testet ändå robust enligt centrala gränsvärdessatsen."
         : "Båda grupperna bedöms som tillräckligt normalfördelade för att T-testet ska vara giltigt.";
 
       const tResultText = tResult
@@ -449,8 +346,8 @@ Analysen visar skillnader mellan grupper, men den bevisar inte att inkomst orsak
           "**Signifikansnivå:** α = 0.05",
           "",
           significant
-            ? "**Slutsats:** P-värdet (" + pValue.toFixed(4) + ") är mindre än 0,05. Vi förkastar nollhypotesen. Skillnaden i partistöd för **" + chosenPartyName + "** mellan låg- och höginkomstkommuner är **statistiskt signifikant** i det valda urvalet."
-            : "**Slutsats:** P-värdet (" + pValue.toFixed(4) + ") är större än eller lika med 0,05. Vi kan inte förkasta nollhypotesen. Skillnaden i partistöd för **" + chosenPartyName + "** mellan låg- och höginkomstkommuner är **inte statistiskt signifikant** i det valda urvalet."
+            ? "**Slutsats:** P-värdet (" + pValue.toFixed(4) + ") är mindre än 0,05. Vi förkastar nollhypotesen. Skillnaden är **statistiskt signifikant** i det valda urvalet."
+            : "**Slutsats:** P-värdet (" + pValue.toFixed(4) + ") är större än eller lika med 0,05. Vi kan inte förkasta nollhypotesen. Skillnaden är **inte statistiskt signifikant** i det valda urvalet."
         ].join("\n")
         : "T-testet kunde inte genomföras eftersom en eller båda grupperna innehåller för få värden.";
 
@@ -465,7 +362,7 @@ För att undersöka om skillnaden i partistöd mellan låginkomst- och höginkom
 
 ### Kontroll av normalfördelning
 
-Innan T-testet kontrolleras om de två grupperna är tillräckligt normalfördelade. Detta görs med hjälp av skevhet (skewness). Tumregel: värden mellan -1 och +1 anses godtagbart normalfördelade.
+Tumregel: skevhet mellan -1 och +1 anses godtagbart normalfördelat.
 
 | Grupp | Antal kommuner | Medelvärde | Skevhet | Normalfördelad? |
 |-------|---------------|------------|---------|-----------------|
@@ -478,16 +375,14 @@ ${normalText}
 
 ${tResultText}
 
-> **Obs:** Ett statistiskt signifikant resultat innebär att skillnaden sannolikt inte beror på slumpen — inte att inkomst *orsakar* skillnaden i röstbeteende.
+> **Obs:** Statistisk signifikans innebär att skillnaden sannolikt inte beror på slumpen — inte att inkomst *orsakar* skillnaden i röstbeteende.
 `);
 
-      addMdToPage(`
-## Extremvärden
-
-Indelningen i inkomstgrupper baseras på kommunernas genomsnittsinkomst, men inom varje grupp finns kommuner som sticker ut. I höginkomstgruppen återfinns kommuner som **Danderyd** och **Lidingö** med exceptionellt höga inkomster som ligger långt över övriga kommuner i samma grupp. Dessa kan påverka gruppens genomsnitt uppåt.
-
-I låginkomstgruppen finns kommuner med mycket låga inkomster som drar ner snittet. Det är viktigt att vara medveten om att genomsnittet per grupp kan påverkas av sådana extremvärden, och att skillnaderna mellan grupperna därför kan se större eller mindre ut än vad som gäller för en typisk kommun i varje grupp.
-`);
+      addToPage(sectionBox("⚠️", "Extremvärden", [
+        "<strong>Danderyd</strong> och <strong>Lidingö</strong> i höginkomstgruppen har exceptionellt höga inkomster och drar upp gruppens genomsnitt",
+        "Låginkomstgruppen innehåller kommuner med mycket låga inkomster som drar ner snittet",
+        "Genomsnittet per grupp kan påverkas av extremvärden — skillnaderna kan se större ut än för en typisk kommun"
+      ]));
     }
   }
 }
