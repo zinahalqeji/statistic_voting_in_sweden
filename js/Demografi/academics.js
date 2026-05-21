@@ -191,11 +191,21 @@ Vi analyserar:
     addMdToPage(`Ingen utbildningsdata hittades för valt kön.`);
   } else {
 
-    let nationellChartData = [["Utbildningsnivå", "2018", "2022"]];
+    // Beräkna totaler för procentberäkning
+    let total2018 = 0;
+    let total2022 = 0;
+    nationellUtbMap.forEach(d => {
+      total2018 += d.antal2018;
+      total2022 += d.antal2022;
+    });
+
+    let nationellChartData = [["Utbildningsnivå", "2018 (%)", "2022 (%)"]];
     utbildningsNivaer.forEach(niva => {
       let d = nationellUtbMap.get(niva);
       if (d) {
-        nationellChartData.push([nivaEtiketter[niva] || niva, d.antal2018, d.antal2022]);
+        let andel2018 = total2018 > 0 ? (d.antal2018 / total2018) * 100 : 0;
+        let andel2022 = total2022 > 0 ? (d.antal2022 / total2022) * 100 : 0;
+        nationellChartData.push([nivaEtiketter[niva] || niva, andel2018, andel2022]);
       }
     });
 
@@ -203,11 +213,11 @@ Vi analyserar:
       type: "BarChart",
       data: nationellChartData,
       options: {
-        title: `Antal personer per utbildningsnivå – nationellt (${valtKon})`,
+        title: `Andel (%) per utbildningsnivå – nationellt (${valtKon})`,
         height: 500,
         chartArea: { left: 200, right: 60, top: 60, bottom: 50 },
         colors: ["#93C5FD", "#1e3a5f"],
-        hAxis: { title: "Antal personer", format: "#,###" },
+        hAxis: { title: "Andel (%)" },
         vAxis: { title: "Utbildningsnivå" },
         legend: { position: "top" }
       }

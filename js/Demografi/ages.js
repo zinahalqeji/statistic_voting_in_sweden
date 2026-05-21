@@ -1,4 +1,4 @@
-import { ages, lanKommun, electionResults } from "../helper/dataLoader.js";
+import { ages, lanKommun, electionResults, valdataKommun } from "../helper/dataLoader.js";
 import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 
 if (!dbInfoOk) {
@@ -243,33 +243,58 @@ Varje punkt representerar en kommun — x-axeln visar medelåldern och y-axeln v
       { label: "Över 46 år",   min: 46, max: 999 }
     ];
 
+
+
+    const cleanName = (str) =>
+      String(str || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+
+    // För röstandel: använd Befolkning_2018/Befolkning_2022 från valdataKommun
+    const kommunPopulation = new Map();
+    valdataKommun.forEach(row => {
+      const key = cleanName(row.Kommunnamn);
+      kommunPopulation.set(key, {
+        population2018: Number(row.Befolkning_2018 || 0),
+        population2022: Number(row.Befolkning_2022 || 0)
+      });
+    });
+
     const bucketVotes = ageBuckets.map(b => {
       const kommunInBucket = kommunAldersData.filter(
         d => d.medelAlder >= b.min && d.medelAlder < b.max
       );
-      const totalVotes = kommunInBucket.reduce((sum, d) => {
-        const v = kommunVotes.get(d.kommun);
-        return sum + (v ? v[voteKey] : 0);
-      }, 0);
-      const avgVotesPerKommun = kommunInBucket.length > 0
-        ? Math.round(totalVotes / kommunInBucket.length)
+
+      const avgAndelRostande = kommunInBucket.length > 0
+        ? kommunInBucket.reduce((sum, d) => {
+          const key = cleanName(d.kommun);
+          const votes = kommunVotes.get(d.kommun);
+          const roster = votes ? votes[voteKey] : 0;
+          const pop = kommunPopulation.get(key);
+          const befolkning = pop
+            ? (valtAr === "2018" ? pop.population2018 : pop.population2022)
+            : 0;
+          const andel = befolkning > 0 ? (roster / befolkning) * 100 : 0;
+          return sum + andel;
+        }, 0) / kommunInBucket.length
         : 0;
+
       return {
         label: b.label,
         kommunCount: kommunInBucket.length,
-        totalVotes,
-        avgVotesPerKommun
+        avgAndelRostande
       };
     });
 
-    // Chart: average votes per kommun by age group
-    const ageVoteChartData = [["Åldersgrupp", "Genomsnitt röster per kommun", { role: "style" }, { role: "annotation" }]];
+    // Chart: average vote share (%) per kommun by age group
+    const ageVoteChartData = [["Åldersgrupp", "Genomsnittlig röstandel (%)", { role: "style" }, { role: "annotation" }]];
     bucketVotes.forEach(b => {
       ageVoteChartData.push([
         `${b.label}\n(${b.kommunCount} kommuner)`,
-        b.avgVotesPerKommun,
+        b.avgAndelRostande,
         "color:#1e3a5f",
-        b.avgVotesPerKommun.toLocaleString("sv-SE")
+        b.avgAndelRostande.toFixed(1) + "%"
       ]);
     });
 
@@ -277,12 +302,12 @@ Varje punkt representerar en kommun — x-axeln visar medelåldern och y-axeln v
       type: "ColumnChart",
       data: ageVoteChartData,
       options: {
-        title: `Genomsnittligt antal röster per kommun – efter åldersgrupp (${valtAr})`,
+        title: `Genomsnittlig röstandel per kommun – efter åldersgrupp (${valtAr})`,
         height: 420,
         chartArea: { left: 80, right: 40, top: 60, bottom: 80 },
         legend: { position: "none" },
         hAxis: { title: "Åldersgrupp (medelålder)" },
-        vAxis: { title: "Genomsnitt röster per kommun", format: "#,###" },
+        vAxis: { title: "Genomsnittlig röstandel (%)", format: "#.##" },
         annotations: { alwaysOutside: true }
       }
     });
@@ -294,10 +319,9 @@ Varje punkt representerar en kommun — x-axeln visar medelåldern och y-axeln v
       data: bucketVotes.map(b => ({
         "Åldersgrupp": b.label,
         "Antal kommuner": b.kommunCount,
-        "Totala röster": b.totalVotes.toLocaleString("sv-SE"),
-        "Genomsnitt röster/kommun": b.avgVotesPerKommun.toLocaleString("sv-SE")
+        "Genomsnittlig röstandel (%)": b.avgAndelRostande.toFixed(1) + "%"
       })),
-      columnNames: ["Åldersgrupp", "Antal kommuner", "Totala röster", "Genomsnitt röster/kommun"]
+      columnNames: ["Åldersgrupp", "Antal kommuner", "Genomsnittlig röstandel (%)"]
     });
 
     addMdToPage(`
