@@ -172,9 +172,23 @@ else {
   const electionResults = Array.isArray(electionResult) ? electionResult : electionResult?.data || electionResult?.result || [];
 
   function getCounty(row) {
+    const kommunText = String(row.kommun || "").trim().toLowerCase();
+
+    const exactMatch = lanKommun.find(x =>
+      String(x.kommun || "").trim().toLowerCase() === kommunText
+    );
+
+    if (exactMatch) {
+      return exactMatch?.Lan || exactMatch?.lan || exactMatch?.län || exactMatch?.Län || "Okänt län";
+    }
+
     const kommunName = normalize(row.kommun);
-    const match = lanKommun.find(x => normalize(x.kommun) === kommunName);
-    return match?.Lan || match?.lan || match?.län || match?.Län || "Okänt län";
+
+    const normalizedMatch = lanKommun.find(x =>
+      normalize(x.kommun) === kommunName
+    );
+
+    return normalizedMatch?.Lan || normalizedMatch?.lan || normalizedMatch?.län || normalizedMatch?.Län || "Okänt län";
   }
 
   const cleanedIncome = incomeData
