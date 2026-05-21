@@ -61,15 +61,6 @@ function formatPE(value) {
   return "0,0 pe";
 }
 
-// Säker konvertering av dbQuery-resultat till array
-// oavsett om det returneras som array, objekt med rows, eller annat
-function toArray(result) {
-  if (Array.isArray(result)) return result;
-  if (result && Array.isArray(result.rows)) return result.rows;
-  if (result && typeof result === "object") return Object.values(result);
-  return [];
-}
-
 function getRegion(area) {
   return NORTH_COUNTIES.includes(area) ? "Norra Sverige" : "Södra Sverige";
 }
@@ -79,10 +70,10 @@ function totalPartyVotes(row) {
 }
 
 function buildRegionStats(data, party) {
-  const rows = toArray(data);
   const groups = {};
-  rows.forEach(function (row) {
-    if (!row.Omrade || !row.Omrade.includes("län")) return;
+  data.forEach(function (row) {
+    if (!row.Omrade) return;
+    if (!row.Omrade.includes("län") && !row.Omrade.includes("läns")) return;
     const region = getRegion(row.Omrade);
     if (!groups[region]) {
       groups[region] = { region: region, partyVotes: 0, totalVotes: 0, areas: 0 };
@@ -209,16 +200,12 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
   dbQuery.use("undersokning_2018");
-  const raw2018 = await dbQuery("SELECT * FROM roster_2018");
+  const data2018 = await dbQuery("SELECT * FROM roster_2018");
 
   dbQuery.use("undersokning_2022");
-  const raw2022 = await dbQuery("SELECT * FROM roster_2022");
+  const data2022 = await dbQuery("SELECT * FROM roster_2022");
 
   removeLoadingBox();
-
-  // Säker konvertering till array oavsett hur dbQuery returnerar datan
-  const data2018 = toArray(raw2018);
-  const data2022 = toArray(raw2022);
 
   const chosenParty = addDropdown("Välj parti:", parties, "S");
   const chosenPartyName = partyNames[chosenParty];
@@ -254,7 +241,7 @@ if (!dbInfoOk) {
 
 Diagrammet visar röstandel (%) för **${chosenPartyName}** i norra och södra Sverige år 2018 och 2022. **Mörkröd stapel = 2018, ljusröd stapel = 2022.**
 
-Norra Sverige = ${NORTH_COUNTIES.length} nordligaste länen. Södra Sverige = övriga ${south2022.areas} län.
+Norra Sverige = ${NORTH_COUNTIES.length} nordligaste länen. Södra Sverige = övriga ${south2022.areas} områden.
 `);
 
     addToPage(partyBadge(chosenParty, chosenPartyName));
@@ -309,7 +296,7 @@ Förändringen anges i **procentenheter (pe)**.
       data: [
         {
           "Region": "Norra Sverige",
-          "Antal län": north2018.areas,
+          "Antal områden": north2018.areas,
           "Röstandel 2018 (%)": formatPercent(north2018.share),
           "Röster 2018": formatVotes(north2018.partyVotes),
           "Röstandel 2022 (%)": formatPercent(north2022.share),
@@ -318,7 +305,7 @@ Förändringen anges i **procentenheter (pe)**.
         },
         {
           "Region": "Södra Sverige",
-          "Antal län": south2018.areas,
+          "Antal områden": south2018.areas,
           "Röstandel 2018 (%)": formatPercent(south2018.share),
           "Röster 2018": formatVotes(south2018.partyVotes),
           "Röstandel 2022 (%)": formatPercent(south2022.share),
@@ -336,11 +323,11 @@ Förändringen anges i **procentenheter (pe)**.
     addMdToPage(`
 ## Metod och begränsningar
 
-**Hur regionerna definieras:** Norra Sverige = Norrbottens, Västerbottens, Västernorrlands, Jämtlands och Gävleborgs län. Södra Sverige = övriga 16 län. Dalarna och Värmland räknas som södra Sverige trots att de är geografiskt mellansvenska.
+**Hur regionerna definieras:** Norra Sverige = Norrbottens, Västerbottens, Västernorrlands, Jämtlands och Gävleborgs län. Södra Sverige = övriga områden. Dalarna och Värmland räknas som södra Sverige trots att de är geografiskt mellansvenska.
 
 **Hur röstandel räknas ut:** Partiets sammanlagda röster i regionen divideras med summan av röster för S, M, SD, V, C, KD, L och MP i samma region.
 
-**Begränsningar:** Indelningen norr/söder är grov. Stora befolkningsrika län som Stockholm, Västra Götaland och Skåne påverkar södra Sveriges genomsnitt mer än mindre län.
+**Begränsningar:** Indelningen norr/söder är grov. Stora befolkningsrika områden som Stockholm och Skåne påverkar södra Sveriges genomsnitt mer än mindre områden.
 `);
   }
 }
