@@ -2,17 +2,111 @@ import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 
 const parties = ["S", "M", "SD", "V", "C", "KD", "L", "MP"];
 
+const partyColors = {
+  S: "#E4003B",
+  M: "#1B66AE",
+  SD: "#DDCC00",
+  V: "#9B1D20",
+  C: "#009933",
+  KD: "#005F8D",
+  L: "#006AB3",
+  MP: "#83CF39"
+};
+
+const partyNames = {
+  S: "Socialdemokraterna",
+  M: "Moderaterna",
+  SD: "#Sverigedemokraterna",
+  V: "Vänsterpartiet",
+  C: "Centerpartiet",
+  KD: "Kristdemokraterna",
+  L: "Liberalerna",
+  MP: "Miljöpartiet"
+};
+
+// Stapeldiagrammets färger visar vilket år stapeln tillhör
+// oavsett valt parti – mörkröd = 2018, ljusröd = 2022.
+const BAR_COLOR_2018 = "#A32D2D";
+const BAR_COLOR_2022 = "#F09595";
+
+// Norra Sverige definieras som de fem nordligaste länen.
+// Övriga 16 län räknas som södra Sverige.
+// Se metod-sektionen för motivering av denna indelning.
+const NORTH_COUNTIES = [
+  "Norrbottens län",
+  "Västerbottens län",
+  "Västernorrlands län",
+  "Jämtlands län",
+  "Gävleborgs län"
+];
+
 function toNumber(value) {
   const num = Number(String(value || 0).replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(num) ? num : 0;
 }
 
 function formatPercent(value) {
-  return `${value.toLocaleString("sv-SE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+  return `${value.toLocaleString("sv-SE", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })} %`;
 }
 
 function formatVotes(value) {
   return `${Math.round(value).toLocaleString("sv-SE")} röster`;
+}
+
+function formatPE(value) {
+  const abs = Math.abs(value).toLocaleString("sv-SE", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+  if (value > 0) return `+${abs} pe`;
+  if (value < 0) return `\u2212${abs} pe`;
+  return `\u00B10,0 pe`;
+}
+
+function getRegion(area) {
+  return NORTH_COUNTIES.includes(area) ? "Norra Sverige" : "Södra Sverige";
+}
+
+function totalPartyVotes(row) {
+  return parties.reduce((sum, party) => sum + toNumber(row[party]), 0);
+}
+
+function buildRegionStats(data, party) {
+  const groups = {};
+  data.forEach(row => {
+    if (!row.Omrade || !row.Omrade.includes("län")) return;
+    const region = getRegion(row.Omrade);
+    if (!groups[region]) {
+      groups[region] = { region, partyVotes: 0, totalVotes: 0, areas: 0 };
+    }
+    groups[region].partyVotes += toNumber(row[party]);
+    groups[region].totalVotes += totalPartyVotes(row);
+    groups[region].areas += 1;
+  });
+  return Object.values(groups).map(row => ({
+    region: row.region,
+    areas: row.areas,
+    partyVotes: row.partyVotes,
+    share: row.totalVotes > 0 ? (row.partyVotes / row.totalVotes) * 100 : 0
+  }));
+}
+
+function partyBadge(partyKey, label) {
+  return `
+    <div style="display:flex; align-items:center; gap:12px; margin:12px 0 8px 0;">
+      <div style="
+        width:44px; height:44px; border-radius:50%;
+        background:${partyColors[partyKey]};
+        display:flex; align-items:center; justify-content:center;
+        font-weight:700; font-size:15px; color:#fff; flex-shrink:0;">
+        ${partyKey}
+      </div>
+      <span style="font-size:16px; font-weight:500; color:#222;">${label}</span>
+    </div>
+  `;
 }
 
 function statCards(cards) {
@@ -21,7 +115,8 @@ function statCards(cards) {
       ${cards.map(card => `
         <div style="background:white; padding:20px; border-radius:8px; min-height:118px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
           <h3 style="margin:0 0 10px 0; font-size:19px;">${card.title}</h3>
-          <p style="font-size:23px; font-weight:bold; margin:0;">${card.value}</p>
+          <p style="font-size:23px; font-weight:bold; margin:0 0 6px 0;">${card.value}</p>
+          ${card.note ? `<p style="font-size:14px; margin:0; color:#555;">${card.note}</p>` : ""}
         </div>
       `).join("")}
     </div>
@@ -51,66 +146,92 @@ function removeLoadingBox() {
   if (el) el.remove();
 }
 
-function getRegion(area) {
-  const north = [
-    "Norrbottens län",
-    "Västerbottens län",
-    "Västernorrlands län",
-    "Jämtlands län",
-    "Gävleborgs län"
-  ];
+// Genererar en dynamisk analys baserat på valt parti och regionalt stöd.
+// Förklarar varför skillnaden mellan norr och söder ser ut som den gör
+// och diskuterar möjliga bakomliggande faktorer.
+function regionalAnalysis(party, partyName, north2018, north2022, south2018, south2022) {
+  const northChange = north2022.share - north2018.share;
+  const southChange = south2022.share - south2018.share;
+  const diff2022 = north2022.share - south2022.share;
+  const strongerRegion = diff2022 > 0 ? "norra" : "södra";
+  const weakerRegion = diff2022 > 0 ? "södra" : "norra";
 
-  return north.includes(area) ? "Norra Sverige" : "Södra Sverige";
-}
+  let partyContext = "";
+  if (party === "S") {
+    partyContext = `Socialdemokraterna har historiskt haft sitt starkaste fäste i norra Sverige,
+    där industriorter, gruvkommuner och en stark fackföreningsrörelse länge präglat politiken.
+    Partiet byggde upp sin dominans under 1900-talets industrialisering och har ett djupt rotat
+    väljarstöd i dessa regioner. I södra Sverige, och särskilt i storstadsregionerna, är
+    konkurrensen från andra partier hårdare.`;
+  } else if (party === "M") {
+    partyContext = `Moderaterna är traditionellt starkare i södra Sverige och i storstadsregionerna,
+    där välbärgade förorter, höga inkomstnivåer och en stark borgerlig tradition gynnar partiet.
+    I norra Sverige, med sin industrihistoria och starka fackföreningsrörelse, är det svårare
+    för Moderaterna att nå lika höga siffror.`;
+  } else if (party === "SD") {
+    partyContext = `Sverigedemokraterna har vuxit i hela landet men visar ofta ett starkt stöd i
+    mellansvenska och sydsvenska industri- och landsbygdskommuner. Skillnaden mellan norr och söder
+    för SD speglar delvis att norra Sverige har en starkare S-tradition som konkurrerar med SD,
+    medan södra Sverige har en mer varierad politisk geografi.`;
+  } else if (party === "C") {
+    partyContext = `Centerpartiet har historiskt haft starkast stöd på landsbygden och i glesbygden,
+    vilket finns i både norra och södra Sverige. Norra Sverige med sina glesbefolkade kommuner
+    kan vara en stark bas för C, men partiet har också tappat väljare på landsbygden generellt
+    de senaste valen.`;
+  } else if (party === "V") {
+    partyContext = `Vänsterpartiet har traditionellt starka rötter i norra Sverige och i
+    industrikommuner, men har under senare år också växt i storstädernas innerstad i söder.
+    Skillnaden mellan norr och söder speglar denna dubbla väljarbase.`;
+  } else {
+    partyContext = `${partyName} visar ett geografiskt mönster som speglar partiets väljarbase
+    och de socioekonomiska förhållanden som råder i norra respektive södra Sverige.`;
+  }
 
-function totalPartyVotes(row) {
-  return parties.reduce((sum, party) => sum + toNumber(row[party]), 0);
-}
+  const changeText = `Mellan 2018 och 2022 förändrades stödet i norra Sverige med
+  <strong>${formatPE(northChange)}</strong> och i södra Sverige med
+  <strong>${formatPE(southChange)}</strong>. ` + (
+      Math.abs(northChange - southChange) < 0.5
+        ? `Förändringen var ungefär lika stor i båda regionerna, vilket tyder på att nationella
+        trender påverkade partiet likartat i hela landet.`
+        : northChange > southChange
+          ? `Partiet ökade mer i norra Sverige, vilket kan tyda på att partiet stärkte sin position
+          i sin traditionella väljarbase.`
+          : `Partiet ökade mer i södra Sverige, vilket kan tyda på att partiet lyckades bredda
+          sin väljarbase utanför sin traditionella kärna.`
+    );
 
-function buildRegionStats(data, party) {
-  const groups = {};
+  const cautionText = `Det är viktigt att notera att skillnaden mellan norr och söder inte
+  nödvändigtvis beror på geografin i sig. Regionerna skiljer sig åt i befolkningstäthet,
+  åldersstruktur, utbildningsnivå, inkomst och industrihistoria – faktorer som var och en
+  kan påverka röstningsmönstret mer direkt än var i landet man bor.`;
 
-  data.forEach(row => {
-    if (!row.Omrade || !row.Omrade.includes("län")) return;
-
-    const region = getRegion(row.Omrade);
-
-    if (!groups[region]) {
-      groups[region] = {
-        region,
-        partyVotes: 0,
-        totalVotes: 0,
-        areas: 0
-      };
-    }
-
-    groups[region].partyVotes += toNumber(row[party]);
-    groups[region].totalVotes += totalPartyVotes(row);
-    groups[region].areas += 1;
-  });
-
-  return Object.values(groups).map(row => ({
-    region: row.region,
-    areas: row.areas,
-    partyVotes: row.partyVotes,
-    share: row.totalVotes > 0 ? (row.partyVotes / row.totalVotes) * 100 : 0
-  }));
+  return `${partyName} är starkare i <strong>${strongerRegion} Sverige</strong> än i
+  ${weakerRegion} Sverige år 2022, med en skillnad på <strong>${formatPercent(Math.abs(diff2022))}</strong>
+  i röstandel.<br><br>${partyContext}<br><br>${changeText}<br><br>${cautionText}`;
 }
 
 addMdToPage(`
 # Regioner: Norr och Söder
 
-Här undersöker vi om röstningsmönster skiljer sig mellan norra och södra Sverige.
+Här undersöker vi om röstningsmönster skiljer sig mellan norra och södra Sverige i riksdagsvalen 2018 och 2022.
 
-## Fråga
-**Skiljer sig röstningsmönster mellan norra och södra Sverige, och finns det tydliga regionala skillnader?**
+## Undersökningsfrågor
 
-**Enheter:** röstandel anges i **procent (%)** och röster anges i **antal röster**.
+**1. Skiljer sig röstningsmönster mellan norra och södra Sverige?**
+
+**2. Är skillnaden stor eller liten och har den förändrats mellan 2018 och 2022?**
+
+**3. Vilka partier gynnas mest respektive minst i norra Sverige?**
+
+**Enheter:**
+- Röstandel anges i **procent (%)** – partiets andel av rösterna bland de åtta riksdagspartierna.
+- Förändring anges i **procentenheter (pe)** – skillnaden mellan 2022 och 2018 i procenttal.
+- Antal röster anges i **antal röster** – det faktiska antalet röster partiet fick i regionen.
 `);
 
 addToPage(infoBox(
   "Analysens hypotes",
-  "Vår hypotes är att röstningsmönster skiljer sig mellan norra och södra Sverige. Skillnaderna kan hänga ihop med befolkningstäthet, arbetsmarknad, traditionella partifästen och andra geografiska faktorer."
+  "Vår hypotes är att röstningsmönster skiljer sig tydligt mellan norra och södra Sverige. Vi förväntar oss att Socialdemokraterna är starkare i norr, där industriorter och fackföreningsrörelsen historiskt präglat politiken. Vi förväntar oss också att Moderaterna och Sverigedemokraterna är starkare i södra Sverige. Vi undersöker om dessa mönster syns i data och om de förändrades mellan 2018 och 2022."
 ));
 
 addToPage(loadingBox());
@@ -129,46 +250,55 @@ else {
   removeLoadingBox();
 
   const chosenParty = addDropdown("Välj parti:", parties, "S");
+  const chosenPartyName = partyNames[chosenParty];
 
   const stats2018 = buildRegionStats(data2018, chosenParty);
   const stats2022 = buildRegionStats(data2022, chosenParty);
 
-  const north2018 = stats2018.find(row => row.region === "Norra Sverige");
-  const south2018 = stats2018.find(row => row.region === "Södra Sverige");
-  const north2022 = stats2022.find(row => row.region === "Norra Sverige");
-  const south2022 = stats2022.find(row => row.region === "Södra Sverige");
+  const north2018 = stats2018.find(r => r.region === "Norra Sverige");
+  const south2018 = stats2018.find(r => r.region === "Södra Sverige");
+  const north2022 = stats2022.find(r => r.region === "Norra Sverige");
+  const south2022 = stats2022.find(r => r.region === "Södra Sverige");
 
   const northChange = north2022.share - north2018.share;
   const southChange = south2022.share - south2018.share;
+  const diff2022 = Math.abs(north2022.share - south2022.share);
+  const strongerRegion = north2022.share > south2022.share ? "Norra Sverige" : "Södra Sverige";
 
-  addMdToPage(`
-## Sammanfattning av urvalet
-`);
+  addMdToPage(`## Sammanfattning av urvalet`);
 
   addToPage(statCards([
     {
       title: "Valt parti",
-      value: chosenParty
+      value: chosenParty,
+      note: chosenPartyName
     },
     {
       title: "Norra Sverige 2022",
-      value: formatPercent(north2022.share)
+      value: formatPercent(north2022.share),
+      note: `${north2022.areas} län ingår`
     },
     {
       title: "Södra Sverige 2022",
-      value: formatPercent(south2022.share)
+      value: formatPercent(south2022.share),
+      note: `${south2022.areas} län ingår`
     },
     {
-      title: "Störst stöd 2022",
-      value: north2022.share > south2022.share ? "Norra Sverige" : "Södra Sverige"
+      title: "Starkast region 2022",
+      value: strongerRegion,
+      note: `Skillnad: ${formatPercent(diff2022)}`
     }
   ]));
 
   addMdToPage(`
 ## Röststöd i norr och söder
 
-Diagrammet visar röstandel för **${chosenParty}** i norra och södra Sverige vid valen 2018 och 2022.
+Diagrammet visar röstandel (%) för **${chosenPartyName}** i norra och södra Sverige år 2018 och 2022. **Mörkröd stapel = 2018, ljusröd stapel = 2022.**
+
+Norra Sverige = ${NORTH_COUNTIES.length} nordligaste länen. Södra Sverige = övriga ${south2022.areas} län. Röstandelen för varje region räknas ut som partiets sammanlagda röster i regionen dividerat med summan av alla åtta partiernas röster i regionen.
 `);
+
+  addToPage(partyBadge(chosenParty, chosenPartyName));
 
   drawGoogleChart({
     type: "ColumnChart",
@@ -178,68 +308,83 @@ Diagrammet visar röstandel för **${chosenParty}** i norra och södra Sverige v
       ["Södra Sverige", south2018.share, south2022.share]
     ],
     options: {
-      title: `Röstandel för ${chosenParty}: Norr jämfört med Söder`,
+      title: `Röstandel för ${chosenPartyName} (${chosenParty}) – Norr vs Söder`,
       height: 520,
       chartArea: { width: "75%", height: "70%" },
-      vAxis: {
-        title: "Röstandel (%)",
-        viewWindow: { min: 0 }
-      },
-      hAxis: {
-        title: "Region"
-      }
+      vAxis: { title: "Röstandel (%)", viewWindow: { min: 0 } },
+      hAxis: { title: "Region" },
+      colors: [BAR_COLOR_2018, BAR_COLOR_2022]
     }
   });
 
   addMdToPage(`
-## Tabell: jämförelse 2018 och 2022
+## Förändring mellan 2018 och 2022
+
+Diagrammet visar hur mycket röstandelen förändrades (i procentenheter) i norra respektive södra Sverige. En stapel ovanför nolllinjen innebär att partiet ökade sin andel – under nolllinjen att det minskade. Varje region har sin egna färg.
+`);
+
+  drawGoogleChart({
+    type: "ColumnChart",
+    data: [
+      ["Region", "Förändring (pe)", { role: "style" }],
+      ["Norra Sverige", northChange, "color: #2f5d50"],
+      ["Södra Sverige", southChange, "color: #82b5a8"]
+    ],
+    options: {
+      title: `Förändring i röstandel för ${chosenPartyName} (${chosenParty}) 2018–2022 (pe)`,
+      height: 400,
+      chartArea: { width: "75%", height: "65%" },
+      vAxis: { title: "Förändring (procentenheter)" },
+      hAxis: { title: "Region" },
+      legend: "none"
+    }
+  });
+
+  addMdToPage(`
+## Tabell: jämförelse norr och söder
+
+Tabellen visar röstandel och antal röster för båda regionerna i båda valen. Förändringen anges i **procentenheter (pe)** – skillnaden mellan 2022 och 2018.
 `);
 
   tableFromData({
     data: [
       {
         Region: "Norra Sverige",
+        "Antal län": north2018.areas,
         "Röstandel 2018 (%)": formatPercent(north2018.share),
-        "Röster 2018 (antal)": formatVotes(north2018.partyVotes),
+        "Röster 2018": formatVotes(north2018.partyVotes),
         "Röstandel 2022 (%)": formatPercent(north2022.share),
-        "Röster 2022 (antal)": formatVotes(north2022.partyVotes),
-        "Förändring 2018–2022": formatPercent(northChange)
+        "Röster 2022": formatVotes(north2022.partyVotes),
+        "Förändring (pe)": formatPE(northChange)
       },
       {
         Region: "Södra Sverige",
+        "Antal län": south2018.areas,
         "Röstandel 2018 (%)": formatPercent(south2018.share),
-        "Röster 2018 (antal)": formatVotes(south2018.partyVotes),
+        "Röster 2018": formatVotes(south2018.partyVotes),
         "Röstandel 2022 (%)": formatPercent(south2022.share),
-        "Röster 2022 (antal)": formatVotes(south2022.partyVotes),
-        "Förändring 2018–2022": formatPercent(southChange)
+        "Röster 2022": formatVotes(south2022.partyVotes),
+        "Förändring (pe)": formatPE(southChange)
       }
     ]
   });
 
-  const strongestRegion = north2022.share > south2022.share ? "norra Sverige" : "södra Sverige";
-  const difference2022 = Math.abs(north2022.share - south2022.share);
+  addToPage(infoBox(
+    `Analys – ${chosenPartyName} i norr och söder`,
+    regionalAnalysis(chosenParty, chosenPartyName, north2018, north2022, south2018, south2022)
+  ));
 
   addMdToPage(`
-## Kort analys
+## Metod och begränsningar
 
-För partiet **${chosenParty}** är stödet högst i **${strongestRegion}** år 2022. Skillnaden mellan norra och södra Sverige är **${formatPercent(difference2022)}**.
+Analysen bygger på valresultat från tabellerna **roster_2018** och **roster_2022**.
 
-I norra Sverige förändrades stödet med **${formatPercent(northChange)}** mellan 2018 och 2022. I södra Sverige förändrades stödet med **${formatPercent(southChange)}** under samma period.
+**Hur regionerna definieras:** Norra Sverige = Norrbottens, Västerbottens, Västernorrlands, Jämtlands och Gävleborgs län (de fem nordligaste länen). Södra Sverige = övriga 16 län. Indelningen är geografisk och förrenklad – Dalarna och Värmland är geografiskt mellansvenska men räknas här som södra Sverige. En mer detaljerad analys skulle kunna dela in Sverige i fler regioner.
 
-Resultatet visar att det finns geografiska skillnader i röstningsmönster. Skillnaden behöver dock inte bero på geografin i sig, utan kan hänga ihop med andra faktorer som befolkningstäthet, utbildningsnivå, arbetsmarknad, inkomst och demografisk sammansättning.
+**Hur röstandel räknas ut:** Partiets sammanlagda röster i regionen divideras med summan av röster för S, M, SD, V, C, KD, L och MP i samma region. Övriga partier och blankröster ingår inte i nämnaren.
 
-## Metod och begränsning
+**Hur förändring räknas ut:** Förändring i pe = röstandel 2022 minus röstandel 2018. Positivt värde = partiet ökade, negativt = partiet minskade.
 
-Analysen delar in Sveriges län i två grupper: **Norra Sverige** och **Södra Sverige**. Till norra Sverige räknas Norrbottens län, Västerbottens län, Västernorrlands län, Jämtlands län och Gävleborgs län. Övriga län räknas som södra Sverige.
-
-Röstandel beräknas som partiets röster dividerat med summan av röster på de åtta riksdagspartierna i datan. Resultatet anges i **procent (%)**. Antal röster anges som **röster (antal)**.
-
-En begränsning är att uppdelningen norr/söder är förenklad. Sverige kan också delas in i fler regioner, exempelvis storstad, landsbygd, kust och inland. Därför ska resultatet ses som en övergripande geografisk jämförelse, inte som en fullständig förklaring till varför människor röstar som de gör.
-
-## Extremvärden
-
-Stora län och storstadsområden kan påverka resultatet mer än mindre län eftersom de har fler röster. Därför kan exempelvis Stockholms län, Västra Götalands län och Skåne län få stor betydelse för gruppen **Södra Sverige**.
-
-Det är viktigt att tolka resultatet som ett geografiskt mönster, inte som ett bevis på orsakssamband.
+**Begränsningar:** Indelningen norr/söder är grov och döljer variation inom regionerna. Södra Sverige innehåller t.ex. både Stockholm och glesbygdslän i Småland, som kan ha mycket olika röstningsmönster. Stora befolkningsrika län som Stockholm, Västra Götaland och Skåne påverkar södra Sveriges genomsnitt mer än mindre län.
 `);
 }
