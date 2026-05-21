@@ -217,9 +217,23 @@ else {
   const electionResults = Array.isArray(electionResult) ? electionResult : electionResult?.data || electionResult?.result || [];
 
   function getCountyByMunicipality(kommun) {
+    const kommunText = String(kommun || "").trim().toLowerCase();
+
+    const exactMatch = lanKommun.find(row =>
+      String(row.kommun || "").trim().toLowerCase() === kommunText
+    );
+
+    if (exactMatch) {
+      return exactMatch?.Lan || exactMatch?.lan || exactMatch?.län || exactMatch?.Län || null;
+    }
+
     const kommunName = normalize(kommun);
-    const match = lanKommun.find(row => normalize(row.kommun) === kommunName);
-    return match?.Lan || match?.lan || match?.län || match?.Län || null;
+
+    const normalizedMatch = lanKommun.find(row =>
+      normalize(row.kommun) === kommunName
+    );
+
+    return normalizedMatch?.Lan || normalizedMatch?.lan || normalizedMatch?.län || normalizedMatch?.Län || null;
   }
 
   const yearColumns = ["2018", "2022"];
@@ -376,23 +390,43 @@ Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i komm
       drawGoogleChart({
         type: "ScatterChart",
         data: [
-          ["Arbetslöshet", "Stöd för " + chosenPartyName],
-          ...mergedData.map(row => [row.arbetsloshet, row.partyShare])
+          [
+            "Arbetslöshet",
+            "Stöd för " + chosenPartyName,
+            { type: "string", role: "tooltip", p: { html: true } }
+          ],
+          ...mergedData.map(row => [
+            row.arbetsloshet,
+            row.partyShare,
+            `
+        <div style="padding:10px 12px; font-size:13px; line-height:1.6; white-space:nowrap;">
+          <strong>${row.kommun}</strong><br>
+          Län: ${row.lan}<br>
+          Arbetslöshet: ${formatPercent(row.arbetsloshet)}<br>
+          Röstandel för ${chosenPartyName}: ${formatPercent(row.partyShare)}
+        </div>
+      `
+          ])
         ],
         options: {
           title: "Arbetslöshet vs stöd för " + chosenPartyName + " (" + chosenYear + ")",
           height: 650,
           chartArea: { width: "84%", height: "74%" },
+
           hAxis: {
             title: "Arbetslöshet i länet (%)",
+            format: "#'%'",
             textStyle: { fontSize: 14 },
             titleTextStyle: { fontSize: 16, bold: true }
           },
+
           vAxis: {
             title: "Röstandel för " + chosenPartyName + " (%)",
+            format: "#'%'",
             textStyle: { fontSize: 14 },
             titleTextStyle: { fontSize: 16, bold: true }
           },
+
           trendlines: {
             0: {
               type: "linear",
@@ -400,22 +434,15 @@ Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i komm
               visibleInLegend: true
             }
           },
+
+          tooltip: { isHtml: true },
+
           legend: {
             position: "bottom",
             textStyle: { fontSize: 13 }
           }
         }
       });
-
-      addMdToPage(`## Resultat`);
-
-      addToPage(sectionBox("📊", "Samband", [
-        "Analysen visar ett <strong>" + corrLabel + "</strong> mellan arbetslöshet och stöd för <strong>" + chosenPartyName + "</strong>",
-        describeCorrelation(corr, chosenParty),
-        hypothesisConclusion(corr),
-        "Högst stöd för <strong>" + chosenPartyName + "</strong>: <strong>" + highestSupport.kommun + "</strong> med <strong>" + formatPercent(highestSupport.partyShare) + "</strong>",
-        "Lägst stöd: <strong>" + lowestSupport.kommun + "</strong> med <strong>" + formatPercent(lowestSupport.partyShare) + "</strong>"
-      ]));
 
       const sortedBySupport = [...mergedData].sort((a, b) => b.partyShare - a.partyShare);
 
@@ -440,6 +467,16 @@ Diagrammet visar varje kommun som en punkt. X-axeln visar arbetslösheten i komm
           Röstandel: formatPercent(row.partyShare)
         }))
       });
+
+      addMdToPage(`## Resultat`);
+
+      addToPage(sectionBox("📊", "Samband", [
+        "Analysen visar ett <strong>" + corrLabel + "</strong> mellan arbetslöshet och stöd för <strong>" + chosenPartyName + "</strong>",
+        describeCorrelation(corr, chosenParty),
+        hypothesisConclusion(corr),
+        "Högst stöd för <strong>" + chosenPartyName + "</strong>: <strong>" + highestSupport.kommun + "</strong> med <strong>" + formatPercent(highestSupport.partyShare) + "</strong>",
+        "Lägst stöd: <strong>" + lowestSupport.kommun + "</strong> med <strong>" + formatPercent(lowestSupport.partyShare) + "</strong>"
+      ]));
 
       addMdToPage(`## Kort analys`);
 
