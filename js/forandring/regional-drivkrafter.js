@@ -31,9 +31,13 @@ med hur kommunernas politiska balans förändrades mellan riksdagsvalen 2018 och
 Det politiska skiftet mäts som förändringen i högerblockets röstandel
 (i procentenheter) mellan de två valen.
 
+> **Metodnotering:** År-specifika block används — Centerpartiet räknas till
+> vänsterblocket 2018 (Januariavtalet) men till högerblocket 2022 (Tidöavtalet).
+> Se metodnotering längst ner på sidan.
+
 </div>
 
-> **Metodnotering:** Korrelationskoefficienten (r) mäter styrkan på det linjära sambandet
+> **Statistisk notering:** Korrelationskoefficienten (r) mäter styrkan på det linjära sambandet
 > mellan två variabler. r = 1 är perfekt positivt samband, r = -1 är perfekt negativt samband,
 > r = 0 betyder inget samband. r² visar hur stor andel av variationen som förklaras.
   `);
@@ -87,21 +91,24 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     return r > 0 ? "mot höger" : "mot vänster";
   }
 
-  // ─── BLOCK DEFINITIONS (Centerpartiet in höger — correct) ────────────────
+  // ─── YEAR-SPECIFIC BLOCK DEFINITIONS ─────────────────────────────────────
+  // Centerpartiet supported Löfven government in 2018 (vänster)
+  // Centerpartiet joined Tidö agreement in 2022 (höger)
 
-  const hogerBlock = [
+  const hogerBlock2018 = [
+    "Moderaterna",
+    "Kristdemokraterna",
+    "Liberalerna",
+    "Sverigedemokraterna"
+    // Centerpartiet NOT in höger 2018
+  ];
+
+  const hogerBlock2022 = [
     "Moderaterna",
     "Kristdemokraterna",
     "Liberalerna",
     "Sverigedemokraterna",
-    "Centerpartiet"
-  ];
-
-  const vansterBlock = [
-    "Socialdemokraterna",
-    "Arbetarepartiet-Socialdemokraterna",
-    "Vänsterpartiet",
-    "Miljöpartiet"
+    "Centerpartiet"  // joined Tidö agreement 2022
   ];
 
   // ─── POLITICAL SHIFT PER KOMMUN ──────────────────────────────────────────
@@ -114,25 +121,24 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
 
     if (!kommunStats.has(kommunKey)) {
       kommunStats.set(kommunKey, {
-        kommun: row.kommun,
-        total2018: 0,
-        total2022: 0,
-        hoger2018: 0,
-        hoger2022: 0
+        kommun:     row.kommun,
+        total2018:  0,
+        total2022:  0,
+        hoger2018:  0,
+        hoger2022:  0
       });
     }
 
-    const stats   = kommunStats.get(kommunKey);
-    const v2018   = safeNumber(row.roster2018);
-    const v2022   = safeNumber(row.roster2022);
+    const stats = kommunStats.get(kommunKey);
+    const v2018 = safeNumber(row.roster2018);
+    const v2022 = safeNumber(row.roster2022);
 
     stats.total2018 += v2018;
     stats.total2022 += v2022;
 
-    if (hogerBlock.includes(row.parti)) {
-      stats.hoger2018 += v2018;
-      stats.hoger2022 += v2022;
-    }
+    // Use year-specific blocks — the key fix
+    if (hogerBlock2018.includes(row.parti)) stats.hoger2018 += v2018;
+    if (hogerBlock2022.includes(row.parti)) stats.hoger2022 += v2022;
   });
 
   const kommunShift = [];
@@ -145,11 +151,11 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     const netShift       = hogerShare2022 - hogerShare2018;
 
     kommunShift.push({
-      kommun:     stats.kommun,
-      kommunKey:  normalizeKommun(stats.kommun),
-      shift:      netShift,
-      hoger2018:  hogerShare2018,
-      hoger2022:  hogerShare2022
+      kommun:    stats.kommun,
+      kommunKey: normalizeKommun(stats.kommun),
+      shift:     netShift,
+      hoger2018: hogerShare2018,
+      hoger2022: hogerShare2022
     });
   });
 
@@ -160,14 +166,12 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     data.forEach(row => {
       if ((row.kon || "").toLowerCase() !== "totalt") return;
       const key   = normalizeKommun(row.kommun);
-      const value = safeNumber(row.medelInkomst2022); // use 2022 consistently
+      const value = safeNumber(row.medelInkomst2022);
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(value);
     });
     const result = {};
-    map.forEach((values, key) => {
-      result[key] = mean(values);
-    });
+    map.forEach((values, key) => { result[key] = mean(values); });
     return result;
   }
 
@@ -176,21 +180,18 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     data.forEach(row => {
       if ((row.kon || "").toLowerCase() !== "totalt") return;
       const key   = normalizeKommun(row.kommun);
-      const value = safeNumber(row.medelalderAr2022); // use 2022 consistently
+      const value = safeNumber(row.medelalderAr2022);
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(value);
     });
     const result = {};
-    map.forEach((values, key) => {
-      result[key] = mean(values);
-    });
+    map.forEach((values, key) => { result[key] = mean(values); });
     return result;
   }
 
   const incomeAgg = aggregateIncome(income);
   const ageAgg    = aggregateAge(ages);
 
-  // Urbanization: count localities per kommun
   const urbanAgg = {};
   geoData.forEach(row => {
     const key = normalizeKommun(row.municipality);
@@ -204,13 +205,13 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
   const analysis = kommunShift.map(r => {
     const key = r.kommunKey;
     return {
-      kommun:   r.kommun,
-      shift:    r.shift,
+      kommun:    r.kommun,
+      shift:     r.shift,
       hoger2018: r.hoger2018,
       hoger2022: r.hoger2022,
-      income:   incomeAgg[key] || 0,
-      age:      ageAgg[key]    || 0,
-      urban:    urbanAgg[key]  || 0
+      income:    incomeAgg[key] || 0,
+      age:       ageAgg[key]    || 0,
+      urban:     urbanAgg[key]  || 0
     };
   }).filter(r => r.income > 0 && r.age > 0);
 
@@ -225,7 +226,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
   const rSqAge    = (rAge    ** 2 * 100).toFixed(1);
   const rSqUrban  = (rUrban  ** 2 * 100).toFixed(1);
 
-  // ─── KPI CARDS — dynamic text based on actual r values ───────────────────
+  // ─── KPI CARDS ───────────────────────────────────────────────────────────
 
   addMdToPage(`
 <div style="
@@ -259,7 +260,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
 </div>
   `);
 
-  // ─── SCATTER CHARTS — one per factor ─────────────────────────────────────
+  // ─── SCATTER CHARTS ───────────────────────────────────────────────────────
 
   addMdToPage(`## Socioekonomisk profil – tre samband med politiskt skifte`);
 
@@ -339,13 +340,13 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
 
   tableFromData({
     data: topLeft.map(r => ({
-      "Kommun":                   r.kommun,
-      "Höger 2018 (%)":           r.hoger2018.toFixed(1),
-      "Höger 2022 (%)":           r.hoger2022.toFixed(1),
+      "Kommun":                    r.kommun,
+      "Höger 2018 (%)":            r.hoger2018.toFixed(1),
+      "Höger 2022 (%)":            r.hoger2022.toFixed(1),
       "Skifte mot vänster (p.e.)": r.shift.toFixed(2),
-      "Medelinkomst 2022 (tkr)":  Math.round(r.income),
-      "Medelålder 2022 (år)":     r.age.toFixed(1),
-      "Antal tätorter":           r.urban
+      "Medelinkomst 2022 (tkr)":   Math.round(r.income),
+      "Medelålder 2022 (år)":      r.age.toFixed(1),
+      "Antal tätorter":            r.urban
     })),
     columnNames: [
       "Kommun", "Höger 2018 (%)", "Höger 2022 (%)",
@@ -355,7 +356,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     fixedHeader: true
   });
 
-  // ─── STATISTICAL INTERPRETATION ──────────────────────────────────────────
+  // ─── STATISTICAL TABLE ────────────────────────────────────────────────────
 
   addMdToPage(`
 ## Statistisk tolkning
@@ -400,6 +401,42 @@ projektets övriga sektioner — utbildning, demografi och geografisk plats.
 
 **Viktig begränsning:** Dessa samband gäller på kommunnivå. Individuella väljardata
 skulle krävas för att dra slutsatser om enskilda personers röstbeteende.
+
+</div>
+  `);
+
+  // ─── METHODOLOGY NOTE ────────────────────────────────────────────────────
+
+  addMdToPage(`
+<div style="
+  background:#FEF9C3;
+  padding:30px;
+  border-radius:16px;
+  margin-top:30px;
+  border-left:8px solid #CA8A04;
+">
+
+## Metodnotering – Varför används år-specifika block?
+
+I denna analys används **olika blockindelningar för 2018 och 2022**,
+eftersom den svenska partikonstellationen förändrades betydligt mellan valen.
+
+### Centerpartiet – det avgörande skiftet
+
+| Valår | Centerpartiets position | Blocktillhörighet i denna analys |
+|---|---|---|
+| **2018** | Stödde Stefan Löfvens S-MP-regering via Januariavtalet | Vänsterblocket |
+| **2022** | Ingick i Tidöavtalet med M, KD, L och SD | Högerblocket |
+
+### Konsekvens för skiftmätningen
+
+Om samma fasta block hade använts för båda åren skulle
+skiftmätningen delvis spegla **Centerpartiets byte av sida**
+snarare än genuina väljarförändringar.
+
+Med år-specifika block mäter nettoförändringen den faktiska
+rörelsen bland väljarna — inte metodologiska artefakter
+orsakade av partiernas egna politiska ompositioneringar.
 
 </div>
 
