@@ -5,7 +5,7 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
-  // ─── INTRO ───────────────────────────────────────────────────────────────
+  // Intro
 
   addMdToPage(`
 # Regionala politiska skiften (2018–2022)
@@ -39,7 +39,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
 </div>
   `);
 
-  // ─── HELPER FUNCTIONS ────────────────────────────────────────────────────
+  // Helper functions
 
   function normalizeKommun(name) {
     return (name || "")
@@ -59,13 +59,13 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
     return Math.sqrt(variance);
   }
 
-  // ─── KOMMUN → LÄN ────────────────────────────────────────────────────────
+  // Kommun-till-län mapping for regional aggregation
 
   const kommunToLan = new Map(
     lanKommun.map(r => [normalizeKommun(r.kommun), r.lan])
   );
 
-  // ─── YEAR-SPECIFIC BLOCK DEFINITIONS ─────────────────────────────────────
+  // Define blocks separately for each year based on actual political alignments
   // This is the key methodological fix:
   // Centerpartiet supported the left government (Löfven) in 2018
   // but joined the right Tidö agreement in 2022.
@@ -103,7 +103,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
     // Centerpartiet NOT included in 2022 vänster
   ];
 
-  // ─── AGGREGATE VOTES PER LÄN ─────────────────────────────────────────────
+  // Aggregate votes per län and block
 
   const lanStats = new Map();
 
@@ -134,7 +134,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
     if (vansterBlock2022.includes(row.parti)) stats.vanster2022 += votes2022;
   });
 
-  // ─── CALCULATE SHIFTS ────────────────────────────────────────────────────
+  // Calculate shifts and prepare data for visualization
 
   const regionalShift = [];
 
@@ -159,7 +159,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
 
   regionalShift.sort((a, b) => b.netShift - a.netShift);
 
-  // ─── STATISTICS ───────────────────────────────────────────────────────────
+  // Statistics for summary cards and insights
 
   const allShifts  = regionalShift.map(r => r.netShift);
   const meanShift  = mean(allShifts);
@@ -170,7 +170,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
   const strongestRight = regionalShift[0];
   const strongestLeft  = [...regionalShift].sort((a, b) => a.netShift - b.netShift)[0];
 
-  // ─── KPI CARDS ───────────────────────────────────────────────────────────
+  // KPIs for summary cards:
 
   addMdToPage(`
 <div style="
@@ -207,7 +207,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
 </div>
   `);
 
-  // ─── CHART: NET SHIFT PER LÄN ────────────────────────────────────────────
+  // Chaerts for regional shifts
 
   addMdToPage(`## Nettoförändring per län (högerblock minus vänsterblock)`);
 
@@ -235,7 +235,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
     }
   });
 
-  // ─── CHART: HÖGER SHARE 2018 VS 2022 ─────────────────────────────────────
+  // Charts for högerblock 
 
   addMdToPage(`## Högerblockets röstandel per län – 2018 vs 2022`);
 
@@ -260,7 +260,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
     }
   });
 
-  // ─── CHART: VÄNSTER SHARE 2018 VS 2022 ───────────────────────────────────
+  // Charts for vänsterblock
 
   addMdToPage(`## Vänsterblockets röstandel per län – 2018 vs 2022`);
 
@@ -285,7 +285,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
     }
   });
 
-  // ─── DETAILED TABLE ───────────────────────────────────────────────────────
+  // Detailed table for regional shifts
 
   addMdToPage(`## Regional statistik – fullständig tabell`);
 
@@ -310,7 +310,7 @@ rättvisa jämförelser mellan län med olika befolkningsstorlek.
     fixedHeader: true
   });
 
-  // ─── STATISTICAL SUMMARY ─────────────────────────────────────────────────
+  // Statistical summary and interpretation
 
   addMdToPage(`
 ## Statistisk sammanfattning
@@ -329,7 +329,7 @@ vissa tydligt mot höger, andra mot vänster. Det finns alltså ingen enhetlig
 nationell trend utan tydliga regionala skillnader.
   `);
 
-  // ─── SLUTSATS ─────────────────────────────────────────────────────────────
+  // Slutsats och metodnotering
 
   addMdToPage(`
 <div style="
@@ -359,7 +359,7 @@ jämförelserna statistiskt rättvisa mellan stora och små län.
 </div>
   `);
 
-  // ─── METHODOLOGY NOTE ────────────────────────────────────────────────────
+  // Methodological note on year-specific blocks
   // This is the key section — explains the year-specific block decision
 
   addMdToPage(`

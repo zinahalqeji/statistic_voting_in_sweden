@@ -5,7 +5,7 @@ if (!dbInfoOk) {
   displayDbNotOkText();
 } else {
 
-  // ─── INTRO ───────────────────────────────────────────────────────────────
+  // Intro
 
   addMdToPage(`
 # Regionala drivkrafter (kommunnivå, 2018–2022)
@@ -42,7 +42,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
 > r = 0 betyder inget samband. r² visar hur stor andel av variationen som förklaras.
   `);
 
-  // ─── HELPER FUNCTIONS ────────────────────────────────────────────────────
+  // Helper functions for data processing and analysis
 
   function normalizeKommun(name) {
     return (name || "")
@@ -91,7 +91,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     return r > 0 ? "mot höger" : "mot vänster";
   }
 
-  // ─── YEAR-SPECIFIC BLOCK DEFINITIONS ─────────────────────────────────────
+  // Year-specific block definitions — the key methodological choice
   // Centerpartiet supported Löfven government in 2018 (vänster)
   // Centerpartiet joined Tidö agreement in 2022 (höger)
 
@@ -111,7 +111,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     "Centerpartiet"  // joined Tidö agreement 2022
   ];
 
-  // ─── POLITICAL SHIFT PER KOMMUN ──────────────────────────────────────────
+  // Political shift calculation per kommun
 
   const kommunStats = new Map();
 
@@ -159,7 +159,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     });
   });
 
-  // ─── SOCIOECONOMIC DATA — consistent year (2022) ──────────────────────────
+  // Socioeconomic data aggregation per kommun
 
   function aggregateIncome(data) {
     const map = new Map();
@@ -200,7 +200,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     urbanAgg[key] += 1;
   });
 
-  // ─── BUILD ANALYSIS DATASET ───────────────────────────────────────────────
+  // Bring together all data for analysis
 
   const analysis = kommunShift.map(r => {
     const key = r.kommunKey;
@@ -215,7 +215,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     };
   }).filter(r => r.income > 0 && r.age > 0);
 
-  // ─── CORRELATION CALCULATIONS ─────────────────────────────────────────────
+  // Correlation calculations
 
   const shifts  = analysis.map(r => r.shift);
   const rIncome = correlation(analysis.map(r => r.income), shifts);
@@ -226,7 +226,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
   const rSqAge    = (rAge    ** 2 * 100).toFixed(1);
   const rSqUrban  = (rUrban  ** 2 * 100).toFixed(1);
 
-  // ─── KPI CARDS ───────────────────────────────────────────────────────────
+  // KPI cards for correlation summary
 
   addMdToPage(`
 <div style="
@@ -260,7 +260,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
 </div>
   `);
 
-  // ─── SCATTER CHARTS ───────────────────────────────────────────────────────
+  // Scatter plots for visualizing relationships
 
   addMdToPage(`## Socioekonomisk profil – tre samband med politiskt skifte`);
 
@@ -308,7 +308,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     "urban", "Antal tätorter", "#059669"
   );
 
-  // ─── TOP 10 TABLES ────────────────────────────────────────────────────────
+  // Top 10 kommuner med störst skifte mot höger och vänster
 
   addMdToPage(`## Kommuner med störst politiskt skifte`);
 
@@ -356,7 +356,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
     fixedHeader: true
   });
 
-  // ─── STATISTICAL TABLE ────────────────────────────────────────────────────
+  // Statistical table summarizing correlations
 
   addMdToPage(`
 ## Statistisk tolkning
@@ -373,7 +373,7 @@ Det politiska skiftet mäts som förändringen i högerblockets röstandel
 Korrelationerna beskriver statistiska samband på kommunnivå — inte direkta orsaker.
   `);
 
-  // ─── SLUTSATS ─────────────────────────────────────────────────────────────
+  // Slutsats och metodnotering
 
   addMdToPage(`
 <div style="
@@ -405,7 +405,7 @@ skulle krävas för att dra slutsatser om enskilda personers röstbeteende.
 </div>
   `);
 
-  // ─── METHODOLOGY NOTE ────────────────────────────────────────────────────
+  // Methodological note on year-specific blocks
 
   addMdToPage(`
 <div style="
