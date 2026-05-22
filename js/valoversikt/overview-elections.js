@@ -103,37 +103,37 @@ Analysen visar:
   margin:30px 0;
 ">
 
-<div style="background:#1e3a5f;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">HÖGERBLOCKET 2018</div>
   <div style="font-size:28px;font-weight:bold;">${hoger2018.toFixed(1)}%</div>
   <div style="font-size:13px;opacity:0.85;">Utan Centerpartiet</div>
 </div>
 
-<div style="background:#2563EB;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">HÖGERBLOCKET 2022</div>
   <div style="font-size:28px;font-weight:bold;">${hoger2022.toFixed(1)}%</div>
   <div style="font-size:13px;opacity:0.85;">Med Centerpartiet (Tidöavtalet)</div>
 </div>
 
-<div style="background:#DC2626;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">VÄNSTERBLOCKET 2018</div>
   <div style="font-size:28px;font-weight:bold;">${vanster2018.toFixed(1)}%</div>
   <div style="font-size:13px;opacity:0.85;">Med Centerpartiet (Januariavtalet)</div>
 </div>
 
-<div style="background:#991B1B;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">VÄNSTERBLOCKET 2022</div>
   <div style="font-size:28px;font-weight:bold;">${vanster2022.toFixed(1)}%</div>
   <div style="font-size:13px;opacity:0.85;">Utan Centerpartiet</div>
 </div>
 
-<div style="background:#059669;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">STÖRST ÖKNING</div>
   <div style="font-size:22px;font-weight:bold;">${biggestWinner.parti}</div>
   <div style="font-size:16px;">+${biggestWinner.change.toFixed(2)}%</div>
 </div>
 
-<div style="background:#7C3AED;color:white;padding:24px;border-radius:16px;">
+<div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">STÖRST MINSKNING</div>
   <div style="font-size:22px;font-weight:bold;">${biggestLoser.parti}</div>
   <div style="font-size:16px;">${biggestLoser.change.toFixed(2)}%</div>
