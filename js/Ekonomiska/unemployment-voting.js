@@ -1,5 +1,3 @@
-// Importerar kontrollen som kollar om databaserna fungerar.
-// displayDbNotOkText används för att visa ett felmeddelande om databasen inte är tillgänglig.
 import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
 
 
