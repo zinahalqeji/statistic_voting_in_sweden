@@ -1,11 +1,15 @@
 import { electionResults } from "../helper/dataLoader.js";
 import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
+import { mean, standardDeviation } from "../helper/statistics.js";
+import { hogerBlock2018, hogerBlock2022, vansterBlock2018, vansterBlock2022 } from "../helper/blocks.js";
 
 if (!dbInfoOk) {
+
   displayDbNotOkText();
+
 } else {
 
-  // Into
+  // Intro
 
   addMdToPage(`
 # Nationella valresultat (2018 och 2022)
@@ -30,70 +34,126 @@ Analysen visar:
 - blockens storlek i procent
 - övergripande förändringar i det politiska landskapet
 
-> **Metodnotering:** Blockindelningen är **år-specifik** — Centerpartiet
+> **Metodnotering:** Blockindelningen är år-specifik — Centerpartiet
 > räknas till vänsterblocket 2018 (Januariavtalet) men till högerblocket 2022 (Tidöavtalet).
-> Se metodnotering längst ner.
 
 </div>
   `);
 
-  // Aggregate votes per party and calculate percentages and changes
+  // Aggregate votes per party
 
   const partyMap = new Map();
 
   electionResults.forEach(row => {
+
     const parti = row.parti;
-    if (!partyMap.has(parti)) partyMap.set(parti, { votes2018: 0, votes2022: 0 });
+
+    if (!partyMap.has(parti)) {
+
+      partyMap.set(parti, {
+        votes2018: 0,
+        votes2022: 0
+      });
+
+    }
+
     const stats = partyMap.get(parti);
+
     stats.votes2018 += Number(row.roster2018 || 0);
     stats.votes2022 += Number(row.roster2022 || 0);
+
   });
 
-  const total2018 = Array.from(partyMap.values()).reduce((sum, p) => sum + p.votes2018, 0);
-  const total2022 = Array.from(partyMap.values()).reduce((sum, p) => sum + p.votes2022, 0);
-  const totalDiff = total2022 - total2018;
+  // Total votes
 
-  const results = Array.from(partyMap.entries()).map(([parti, stats]) => ({
-    parti,
-    votes2018:   stats.votes2018,
-    votes2022:   stats.votes2022,
-    percent2018: (stats.votes2018 / total2018) * 100,
-    percent2022: (stats.votes2022 / total2022) * 100,
-    change:      ((stats.votes2022 / total2022) - (stats.votes2018 / total2018)) * 100
-  })).sort((a, b) => b.percent2022 - a.percent2022);
+  const total2018 =
+    Array.from(partyMap.values())
+      .reduce((sum, p) => sum + p.votes2018, 0);
 
-  // Year-specific block definitions based on political alliances in each election
+  const total2022 =
+    Array.from(partyMap.values())
+      .reduce((sum, p) => sum + p.votes2022, 0);
 
-  const hogerBlock2018 = [
-    "Moderaterna", "Kristdemokraterna", "Liberalerna", "Sverigedemokraterna"
-  ];
-  const vansterBlock2018 = [
-    "Socialdemokraterna", "Arbetarepartiet-Socialdemokraterna",
-    "Vänsterpartiet", "Miljöpartiet", "Centerpartiet"
-  ];
-  const hogerBlock2022 = [
-    "Moderaterna", "Kristdemokraterna", "Liberalerna",
-    "Sverigedemokraterna", "Centerpartiet"
-  ];
-  const vansterBlock2022 = [
-    "Socialdemokraterna", "Arbetarepartiet-Socialdemokraterna",
-    "Vänsterpartiet", "Miljöpartiet"
-  ];
+  // Party results
 
-  let hoger2018 = 0, hoger2022 = 0, vanster2018 = 0, vanster2022 = 0;
+  const results =
+    Array.from(partyMap.entries())
+      .map(([parti, stats]) => ({
+
+        parti,
+
+        votes2018: stats.votes2018,
+        votes2022: stats.votes2022,
+
+        percent2018:
+          (stats.votes2018 / total2018) * 100,
+
+        percent2022:
+          (stats.votes2022 / total2022) * 100,
+
+        change:
+          ((stats.votes2022 / total2022)
+          - (stats.votes2018 / total2018)) * 100
+
+      }))
+      .sort((a, b) => b.percent2022 - a.percent2022);
+
+  // Statistical calculations
+
+  const allChanges =
+    results.map(r => r.change);
+
+  const meanChange =
+    mean(allChanges);
+
+  const stdChange =
+    standardDeviation(allChanges);
+
+  const maxChange =
+    Math.max(...allChanges);
+
+  const minChange =
+    Math.min(...allChanges);
+
+  // Biggest winner & loser
+
+  const biggestWinner =
+    [...results]
+      .sort((a, b) => b.change - a.change)[0];
+
+  const biggestLoser =
+    [...results]
+      .sort((a, b) => a.change - b.change)[0];
+
+  // Block calculations
+
+  let hoger2018 = 0;
+  let hoger2022 = 0;
+
+  let vanster2018 = 0;
+  let vanster2022 = 0;
 
   results.forEach(row => {
-    if (hogerBlock2018.includes(row.parti))   hoger2018   += row.percent2018;
-    if (vansterBlock2018.includes(row.parti)) vanster2018 += row.percent2018;
-    if (hogerBlock2022.includes(row.parti))   hoger2022   += row.percent2022;
-    if (vansterBlock2022.includes(row.parti)) vanster2022 += row.percent2022;
+
+    if (hogerBlock2018.includes(row.parti)) {
+      hoger2018 += row.percent2018;
+    }
+
+    if (vansterBlock2018.includes(row.parti)) {
+      vanster2018 += row.percent2018;
+    }
+
+    if (hogerBlock2022.includes(row.parti)) {
+      hoger2022 += row.percent2022;
+    }
+
+    if (vansterBlock2022.includes(row.parti)) {
+      vanster2022 += row.percent2022;
+    }
+
   });
 
-  // Find biggest winner and loser
-  const biggestWinner = [...results].sort((a, b) => b.change - a.change)[0];
-  const biggestLoser  = [...results].sort((a, b) => a.change - b.change)[0];
-
-  // KPI cards for block percentages and biggest changes
+  // KPI cards
 
   addMdToPage(`
 <div style="
@@ -106,131 +166,280 @@ Analysen visar:
 <div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">HÖGERBLOCKET 2018</div>
   <div style="font-size:28px;font-weight:bold;">${hoger2018.toFixed(1)}%</div>
-  <div style="font-size:13px;opacity:0.85;">Utan Centerpartiet</div>
 </div>
 
 <div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">HÖGERBLOCKET 2022</div>
   <div style="font-size:28px;font-weight:bold;">${hoger2022.toFixed(1)}%</div>
-  <div style="font-size:13px;opacity:0.85;">Med Centerpartiet (Tidöavtalet)</div>
 </div>
 
 <div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">VÄNSTERBLOCKET 2018</div>
   <div style="font-size:28px;font-weight:bold;">${vanster2018.toFixed(1)}%</div>
-  <div style="font-size:13px;opacity:0.85;">Med Centerpartiet (Januariavtalet)</div>
 </div>
 
 <div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">VÄNSTERBLOCKET 2022</div>
   <div style="font-size:28px;font-weight:bold;">${vanster2022.toFixed(1)}%</div>
-  <div style="font-size:13px;opacity:0.85;">Utan Centerpartiet</div>
 </div>
 
 <div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">STÖRST ÖKNING</div>
   <div style="font-size:22px;font-weight:bold;">${biggestWinner.parti}</div>
-  <div style="font-size:16px;">+${biggestWinner.change.toFixed(2)}%</div>
+  <div style="font-size:16px;">+${biggestWinner.change.toFixed(2)} p.e.</div>
 </div>
 
 <div style="background:#F1F5F9;color:black;padding:24px;border-radius:16px;">
   <div style="font-size:13px;opacity:0.8;">STÖRST MINSKNING</div>
   <div style="font-size:22px;font-weight:bold;">${biggestLoser.parti}</div>
-  <div style="font-size:16px;">${biggestLoser.change.toFixed(2)}%</div>
+  <div style="font-size:16px;">${biggestLoser.change.toFixed(2)} p.e.</div>
 </div>
 
 </div>
   `);
 
-  // Charts for party percentages and changes
+  // National vote shares chart
 
-  addMdToPage(`## Nationella röstandelar per parti (%) – 2018 och 2022`);
+  addMdToPage(`
+## Nationella röstandelar per parti (%) – 2018 och 2022
+`);
 
-  const chartData = [["Parti", "2018 (%)", "2022 (%)"]];
+  const chartData = [
+    ["Parti", "2018 (%)", "2022 (%)"]
+  ];
+
   results.forEach(row => {
-    chartData.push([row.parti, row.percent2018, row.percent2022]);
-  });
 
-  drawGoogleChart({
-    type: "ColumnChart",
-    data: chartData,
-    options: {
-      title: "Nationella röstandelar per parti (2018 och 2022)",
-      height: 500,
-      colors: ["#93C5FD", "#1e3a5f"],
-      chartArea: { left: 70, right: 40, top: 60, bottom: 120 },
-      hAxis: { title: "Parti", slantedText: true, slantedTextAngle: 30 },
-      vAxis: { title: "Röstandel (%)" },
-      legend: { position: "top" }
-    }
-  });
-
-  // Change chart with annotations for biggest winner and loser
-
-  addMdToPage(`## Förändring i röstandel per parti (procentenheter)`);
-
-  const changeChartData = [["Parti", "Förändring (p.e.)", { role: "style" }, { role: "annotation" }]];
-  [...results].sort((a, b) => b.change - a.change).forEach(row => {
-    changeChartData.push([
+    chartData.push([
       row.parti,
-      row.change,
-      row.change >= 0 ? "color:#059669" : "color:#DC2626",
-      (row.change >= 0 ? "+" : "") + row.change.toFixed(2) + "%"
+      row.percent2018,
+      row.percent2022
     ]);
+
   });
 
   drawGoogleChart({
-    type: "BarChart",
-    data: changeChartData,
+
+    type: "ColumnChart",
+
+    data: chartData,
+
     options: {
-      title: "Förändring i röstandel per parti (2018 → 2022)",
-      height: 420,
-      chartArea: { left: 240, right: 80, top: 50, bottom: 40 },
-      legend: { position: "none" },
-      hAxis: { title: "Förändring (procentenheter)" },
-      vAxis: { title: "Parti" },
-      annotations: { alwaysOutside: true }
-    }
-  });
 
-  // Chart for block percentages
+      title:
+        "Nationella röstandelar per parti (2018 och 2022)",
 
-  addMdToPage(`## Blocknivå – höger och vänster (%) – 2018 och 2022`);
+      height: 500,
 
-  drawGoogleChart({
-    type: "BarChart",
-    data: [
-      ["Block", "2018 (%)", "2022 (%)"],
-      ["Vänsterblocket", vanster2018, vanster2022],
-      ["Högerblocket",   hoger2018,   hoger2022]
-    ],
-    options: {
-      title: "Blockstöd i procent – 2018 och 2022 (år-specifika block)",
-      height: 300,
       colors: ["#93C5FD", "#1e3a5f"],
-      chartArea: { left: 160, right: 80, top: 50, bottom: 40 },
-      hAxis: { title: "Röstandel (%)" },
-      vAxis: { title: "Block" },
-      legend: { position: "top" }
+
+      chartArea: {
+        left: 70,
+        right: 40,
+        top: 60,
+        bottom: 120
+      },
+
+      hAxis: {
+        title: "Parti",
+        slantedText: true,
+        slantedTextAngle: 30
+      },
+
+      vAxis: {
+        title: "Röstandel (%)"
+      },
+
+      legend: {
+        position: "top"
+      }
+
     }
+
   });
 
-  // Summary table for party results
+  // Change chart
 
-  addMdToPage(`## Nationell sammanfattning per parti`);
+  addMdToPage(`
+## Förändring i röstandel per parti (procentenheter)
+`);
+
+  const changeChartData = [
+    ["Parti", "Förändring", { role: "style" }, { role: "annotation" }]
+  ];
+
+  [...results]
+    .sort((a, b) => b.change - a.change)
+    .forEach(row => {
+
+      changeChartData.push([
+
+        row.parti,
+
+        row.change,
+
+        row.change >= 0
+          ? "color:#059669"
+          : "color:#DC2626",
+
+        (row.change >= 0 ? "+" : "")
+        + row.change.toFixed(2)
+
+      ]);
+
+    });
+
+  drawGoogleChart({
+
+    type: "BarChart",
+
+    data: changeChartData,
+
+    options: {
+
+      title:
+        "Förändring i röstandel per parti (2018 → 2022)",
+
+      height: 420,
+
+      chartArea: {
+        left: 240,
+        right: 80,
+        top: 50,
+        bottom: 40
+      },
+
+      legend: {
+        position: "none"
+      },
+
+      hAxis: {
+        title: "Förändring (procentenheter)"
+      },
+
+      vAxis: {
+        title: "Parti"
+      },
+
+      annotations: {
+        alwaysOutside: true
+      }
+
+    }
+
+  });
+
+  // Block chart
+
+  addMdToPage(`
+## Blocknivå – höger och vänster (%) – 2018 och 2022
+`);
+
+  drawGoogleChart({
+
+    type: "BarChart",
+
+    data: [
+
+      ["Block", "2018 (%)", "2022 (%)"],
+
+      ["Vänsterblocket", vanster2018, vanster2022],
+
+      ["Högerblocket", hoger2018, hoger2022]
+
+    ],
+
+    options: {
+
+      title:
+        "Blockstöd i procent – 2018 och 2022",
+
+      height: 300,
+
+      colors: ["#93C5FD", "#1e3a5f"],
+
+      chartArea: {
+        left: 160,
+        right: 80,
+        top: 50,
+        bottom: 40
+      },
+
+      hAxis: {
+        title: "Röstandel (%)"
+      },
+
+      vAxis: {
+        title: "Block"
+      },
+
+      legend: {
+        position: "top"
+      }
+
+    }
+
+  });
+
+  // Table
+
+  addMdToPage(`
+## Nationell sammanfattning per parti
+`);
 
   tableFromData({
+
     data: results.map(r => ({
-      "Parti":            r.parti,
-      "2018 (%)":         r.percent2018.toFixed(2),
-      "2022 (%)":         r.percent2022.toFixed(2),
-      "Förändring (p.e.)": (r.change >= 0 ? "+" : "") + r.change.toFixed(2)
+
+      "Parti": r.parti,
+
+      "2018 (%)":
+        r.percent2018.toFixed(2),
+
+      "2022 (%)":
+        r.percent2022.toFixed(2),
+
+      "Förändring (p.e.)":
+        (r.change >= 0 ? "+" : "")
+        + r.change.toFixed(2)
+
     })),
-    columnNames: ["Parti", "2018 (%)", "2022 (%)", "Förändring (p.e.)"],
+
+    columnNames: [
+      "Parti",
+      "2018 (%)",
+      "2022 (%)",
+      "Förändring (p.e.)"
+    ],
+
     fixedHeader: true
+
   });
 
-  // Interpretation and methodological note
+  // Statistical summary
+
+  addMdToPage(`
+
+## Statistisk spridning mellan partier
+
+- **Genomsnittlig förändring:** ${meanChange.toFixed(2)} procentenheter
+- **Standardavvikelse:** ${stdChange.toFixed(2)}
+- **Största ökning:** +${maxChange.toFixed(2)} procentenheter
+- **Största minskning:** ${minChange.toFixed(2)} procentenheter
+
+### Tolkning
+
+Resultaten visar att förändringarna mellan partierna var relativt måttliga.
+
+Standardavvikelsen visar hur mycket partiernas utveckling varierade mellan valen.
+
+- Ett högre värde innebär större skillnader mellan partiernas förändringar.
+- Ett lägre värde tyder på ett mer stabilt väljarbeteende.
+
+Eftersom genomsnittet ligger nära 0 visar resultaten att vissa partier ökade samtidigt som andra minskade ungefär lika mycket. Det tyder på omfördelningar av väljarstöd snarare än stora förändringar i det totala valdeltagandet eller partisystemet.
+`);
+
+  // Interpretation
 
   addMdToPage(`
 <div style="
@@ -246,19 +455,27 @@ Analysen visar:
 Den nationella analysen visar hur väljarnas stöd fördelades mellan Sveriges
 riksdagspartier under valen 2018 och 2022.
 
-- **${biggestWinner.parti}** hade den största ökningen med **+${biggestWinner.change.toFixed(2)}** procentenheter
-- **${biggestLoser.parti}** hade den största minskningen med **${biggestLoser.change.toFixed(2)}** procentenheter
-- Högerblocket gick från **${hoger2018.toFixed(1)}%** (2018) till **${hoger2022.toFixed(1)}%** (2022)
-- Vänsterblocket gick från **${vanster2018.toFixed(1)}%** (2018) till **${vanster2022.toFixed(1)}%** (2022)
+- **${biggestWinner.parti}** hade den största ökningen med
+  **+${biggestWinner.change.toFixed(2)} procentenheter**
+- **${biggestLoser.parti}** hade den största minskningen med
+  **${biggestLoser.change.toFixed(2)} procentenheter**
+- Högerblocket gick från
+  **${hoger2018.toFixed(1)}%** till
+  **${hoger2022.toFixed(1)}%**
+- Vänsterblocket gick från
+  **${vanster2018.toFixed(1)}%** till
+  **${vanster2022.toFixed(1)}%**
 
-Denna sida fungerar som en övergripande introduktion till projektets
-fortsatta analyser av regionala skillnader, socioekonomiska faktorer
-och politiska förändringar.
+Standardavvikelsen på **${stdChange.toFixed(2)}**
+visar att partiernas förändringar varierade, men utan extrema rörelser.
+
+Analysen bygger på hela populationen av registrerade röster och beskriver därför
+faktiska förändringar i valresultatet — inte statistiska uppskattningar från ett stickprov.
 
 </div>
   `);
 
-  // Methodological note on year-specific blocks
+  // Method note
 
   addMdToPage(`
 <div style="
@@ -271,19 +488,18 @@ och politiska förändringar.
 
 ## Metodnotering – Varför används år-specifika block?
 
-I denna analys används **olika blockindelningar för 2018 och 2022**,
-eftersom den svenska partikonstellationen förändrades betydligt mellan valen.
+I denna analys används olika blockindelningar för 2018 och 2022,
+eftersom den svenska partikonstellationen förändrades mellan valen.
 
 | Valår | Centerpartiets position | Blocktillhörighet |
 |---|---|---|
-| **2018** | Stödde Löfvens S-MP-regering via Januariavtalet | Vänsterblocket |
-| **2022** | Ingick i Tidöavtalet med M, KD, L och SD | Högerblocket |
+| 2018 | Stödde Löfvens regering via Januariavtalet | Vänsterblocket |
+| 2022 | Ingick i Tidöavtalet | Högerblocket |
 
 Om samma fasta block hade använts för båda åren skulle blockjämförelsen
 delvis spegla Centerpartiets byte av sida snarare än genuina väljarförändringar.
 
 </div>
-
   `);
 
 }
