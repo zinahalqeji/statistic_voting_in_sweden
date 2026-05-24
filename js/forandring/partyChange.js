@@ -1,15 +1,17 @@
 import { electionResults } from "../helper/dataLoader.js";
 import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
+import { mean, median, standardDeviation } from "../helper/statistics.js";
+import { partyColors } from "../helper/partyConfig.js";
 
 if (!dbInfoOk) {
+
   displayDbNotOkText();
 
 } else {
 
-
   // Introduktion
 
-addMdToPage(`
+  addMdToPage(`
 # Partiförändringar (2018–2022)
 
 <div style="
@@ -40,53 +42,41 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
   // Dropdown för att välja parti
 
   const allParties =
-    [...new Set(electionResults.map(r => r.parti))].sort();
+    [...new Set(
+      electionResults.map(r => r.parti)
+    )].sort();
 
   let chosenParti =
     addDropdown("Välj parti", allParties);
-
-
-  // Partifärger
-
-  const partyColors = {
-    'Arbetarepartiet-Socialdemokraterna': '#EE2020',
-    'Socialdemokraterna': '#EE2020',
-    'Moderaterna': '#1D74BB',
-    'Sverigedemokraterna': '#DDDD00',
-    'Centerpartiet': '#009933',
-    'Vänsterpartiet': '#AF0000',
-    'Kristdemokraterna': '#003F7D',
-    'Liberalerna': '#6AB2E7',
-    'Miljöpartiet': '#83CF39'
-  };
 
   let chosenColor =
     partyColors[chosenParti] || "#888888";
 
   let otherColor = "#cccccc";
 
-
-  // Totalsfunktion för att beräkna årlig röstandel och total röstandel för valt parti
+  // Funktion för nationella totalsiffror
 
   function getTotals(year) {
 
     const totalVotes =
-      electionResults.reduce((s, r) =>
-        s + Number(
+      electionResults.reduce((sum, row) =>
+        sum + Number(
           year === 2018
-            ? r.roster2018
-            : r.roster2022
+            ? row.roster2018
+            : row.roster2022
         ), 0
       );
 
     const partyVotes =
       electionResults
-        .filter(r => r.parti === chosenParti)
-        .reduce((s, r) =>
-          s + Number(
+        .filter(row =>
+          row.parti === chosenParti
+        )
+        .reduce((sum, row) =>
+          sum + Number(
             year === 2018
-              ? r.roster2018
-              : r.roster2022
+              ? row.roster2018
+              : row.roster2022
           ), 0
         );
 
@@ -98,9 +88,10 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
       partyVotes,
       percent
     };
+
   }
 
-  // Funktion för att normalisera kommunnamn
+  // Kommunala förändringar
 
   function getMunicipalityChanges() {
 
@@ -117,27 +108,31 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
         );
 
       const total2018 =
-        kommunRows.reduce((s, r) =>
-          s + Number(r.roster2018), 0
+        kommunRows.reduce((sum, row) =>
+          sum + Number(row.roster2018), 0
         );
 
       const total2022 =
-        kommunRows.reduce((s, r) =>
-          s + Number(r.roster2022), 0
+        kommunRows.reduce((sum, row) =>
+          sum + Number(row.roster2022), 0
         );
 
       const party2018 =
         kommunRows
-          .filter(r => r.parti === chosenParti)
-          .reduce((s, r) =>
-            s + Number(r.roster2018), 0
+          .filter(row =>
+            row.parti === chosenParti
+          )
+          .reduce((sum, row) =>
+            sum + Number(row.roster2018), 0
           );
 
       const party2022 =
         kommunRows
-          .filter(r => r.parti === chosenParti)
-          .reduce((s, r) =>
-            s + Number(r.roster2022), 0
+          .filter(row =>
+            row.parti === chosenParti
+          )
+          .reduce((sum, row) =>
+            sum + Number(row.roster2022), 0
           );
 
       const percent2018 =
@@ -154,66 +149,56 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
         kommun,
         percent2018,
         percent2022,
-        change: percent2022 - percent2018
+        change:
+          percent2022 - percent2018
       };
 
     });
 
   }
 
-  // Statistiska funktioner för att beräkna genomsnitt, median och standardavvikelse
-
-  function mean(arr) {
-    return arr.reduce((a, b) => a + b, 0) / arr.length;
-  }
-
-  function median(arr) {
-
-    const sorted =
-      [...arr].sort((a, b) => a - b);
-
-    const mid =
-      Math.floor(sorted.length / 2);
-
-    return sorted.length % 2 !== 0
-      ? sorted[mid]
-      : (sorted[mid - 1] + sorted[mid]) / 2;
-  }
-
-  function standardDeviation(arr) {
-
-    const m = mean(arr);
-
-    const variance =
-      mean(arr.map(v => (v - m) ** 2));
-
-    return Math.sqrt(variance);
-  }
-
-  // Ritdiagram för att visa nationella resultat och förändring över tid
+  // Diagram för nationella resultat
 
   function drawYearChart(year) {
 
-    const { percent } = getTotals(year);
+    const { percent } =
+      getTotals(year);
 
     drawGoogleChart({
+
       type: "BarChart",
+
       data: [
         ["Parti", chosenParti, "Övriga"],
         ["Röstandel", percent, 100 - percent]
       ],
+
       options: {
-        title: `Andel av röster (${year}) – Nationellt`,
+
+        title:
+          `Andel av röster (${year}) – Nationellt`,
+
         height: 300,
-        colors: [chosenColor, otherColor],
-        legend: { position: "top" },
+
+        colors: [
+          chosenColor,
+          otherColor
+        ],
+
+        legend: {
+          position: "top"
+        },
+
         hAxis: {
           title: "Procent (%)"
         },
+
         vAxis: {
           title: "Parti"
         }
+
       }
+
     });
 
     addMdToPage(`
@@ -225,30 +210,41 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
 `);
 
     return percent;
+
   }
 
-  // Ritdiagram för att visa kommunala förändringar i röstandel
+  // Resultat 2018
 
-  addMdToPage("## Resultat för 2018");
+  addMdToPage(`
+## Resultat för 2018
+`);
 
   const percent2018 =
     drawYearChart(2018);
 
-  addMdToPage("## Resultat för 2022");
+  // Resultat 2022
+
+  addMdToPage(`
+## Resultat för 2022
+`);
 
   const percent2022 =
     drawYearChart(2022);
 
-  // Ritdiagram för att visa förändring i röstandel mellan 2018 och 2022
+  // Nationell förändring
 
   drawGoogleChart({
+
     type: "ColumnChart",
+
     data: [
       ["År", "Röstandel (%)", { role: "style" }],
       ["2018", percent2018, `color:${chosenColor}`],
       ["2022", percent2022, `color:${chosenColor}`]
     ],
+
     options: {
+
       title:
         `Förändring i stöd för ${chosenParti} (2018–2022)`,
 
@@ -259,10 +255,12 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
       vAxis: {
         title: "Röstandel (%)"
       }
+
     }
+
   });
 
-  // Beräkna kommunala förändringar i röstandel
+  // Kommunala förändringar
 
   const municipalityChanges =
     getMunicipalityChanges();
@@ -279,7 +277,7 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
   const stdChange =
     standardDeviation(allChanges);
 
-  // Ritdiagram för att visa regionala politiska skiften 
+  // Diagram för kommunala förändringar
 
   addMdToPage(`
 ## Kommunala förändringar i röstandel
@@ -290,7 +288,9 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
   ];
 
   municipalityChanges
-    .sort((a, b) => b.change - a.change)
+    .sort((a, b) =>
+      b.change - a.change
+    )
     .slice(0, 20)
     .forEach(row => {
 
@@ -303,26 +303,37 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
     });
 
   drawGoogleChart({
+
     type: "BarChart",
+
     data: chartData,
+
     options: {
+
       title:
         `Kommuner med störst förändring i röstandel`,
+
       height: 650,
+
       legend: "none",
+
       chartArea: {
         left: 180,
         right: 30,
         top: 70,
         bottom: 70
       },
+
       hAxis: {
-        title: "Förändring i procentenheter"
+        title:
+          "Förändring i procentenheter"
       }
+
     }
+
   });
 
-  // Sammanfattning av kommunala förändringar
+  // Statistisk analys
 
   addMdToPage(`
 ## Statistisk analys av förändringen
@@ -347,9 +358,6 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
   }
 `);
 
-
-  // Sammanfattning av kommunala förändringar
-
   addMdToPage(`
 ### Statistiska mått mellan kommuner
 
@@ -360,64 +368,73 @@ Genom att först kartlägga *vad* som förändrades kan vi senare koppla dessa f
 Standardavvikelsen visar hur mycket förändringarna varierar mellan kommuner. Ett högre värde indikerar större regionala skillnader i partiets utveckling.
 `);
 
-  // Starka och svaga kommuner
+  // Största ökning och minskning
 
   const strongest =
     [...municipalityChanges]
-      .sort((a, b) => b.change - a.change)
+      .sort((a, b) =>
+        b.change - a.change
+      )
       .slice(0, 10);
 
   const weakest =
     [...municipalityChanges]
-      .sort((a, b) => a.change - b.change)
+      .sort((a, b) =>
+        a.change - b.change
+      )
       .slice(0, 10);
-
 
   addMdToPage(`
 ## Kommuner med störst ökning i röstandel
 `);
 
   tableFromData({
+
     data: strongest.map(r => ({
       "Kommun": r.kommun,
       "2018 (%)": r.percent2018.toFixed(2),
       "2022 (%)": r.percent2022.toFixed(2),
       "Förändring": r.change.toFixed(2)
     })),
+
     columnNames: [
       "Kommun",
       "2018 (%)",
       "2022 (%)",
       "Förändring"
     ],
-    fixedHeader: true
-  });
 
+    fixedHeader: true
+
+  });
 
   addMdToPage(`
 ## Kommuner med störst minskning i röstandel
 `);
 
   tableFromData({
+
     data: weakest.map(r => ({
       "Kommun": r.kommun,
       "2018 (%)": r.percent2018.toFixed(2),
       "2022 (%)": r.percent2022.toFixed(2),
       "Förändring": r.change.toFixed(2)
     })),
+
     columnNames: [
       "Kommun",
       "2018 (%)",
       "2022 (%)",
       "Förändring"
     ],
-    fixedHeader: true
-  });
 
+    fixedHeader: true
+
+  });
 
   // Slutsats
 
-addMdToPage(`
+  addMdToPage(`
 <div style="
 background:#F1F5F9;
 padding:30px;
@@ -451,4 +468,5 @@ Resultaten indikerar därför att förändringen i väljarstöd inte var geograf
 
 </div>
 `);
+
 }
