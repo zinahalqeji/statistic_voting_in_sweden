@@ -84,6 +84,29 @@ https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__AM__AM0401__AM0401L/NA
 
 ---
 
+## 5. SCB - Inkomstnivå i Sverige
+**Källa:** Statistiska centralbyrån  
+**Dataset:** Sammanräknad förvärvsinkomst för boende i Sverige hela året efter region, kön, ålder och inkomstklass  
+**URL:**  
+https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__HE__HE0110__HE0110A/SamForvInk1/
+
+**Urval som användes i projektet:**  
+- Region: kommuner  
+- Kön: män, kvinnor och totalt  
+- Ålder: 20–64 år  
+- Inkomstklass: totalt  
+- År: 2018 och 2022  
+- Mått: Medelinkomst, tkr  
+
+**Användning i projektet:**  
+- Inkomstnivå per kommun  
+- Socioekonomiska analyser  
+- Jämförelse mellan inkomstnivå och valresultat  
+- Korrelation mellan inkomst och politiskt stöd  
+- Tidsserieanalys 2018–2022
+
+---
+
 # Databearbetning
 
 För att möjliggöra jämförbara analyser har följande steg genomförts:

@@ -1,4 +1,4 @@
-createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
+createMenu('Vilka faktorer påverkar röstningen i Sverige?', [
 
   { name: 'Introduktion', script: 'intro.js' },
 
@@ -39,7 +39,7 @@ createMenu('Vad påverkar röstning i Sverige (2018–2022)?', [
       { name: 'Regionala drivkrafter', script: 'forandring/regional-drivkrafter.js' }
 ]}, 
 
-  { name: 'källor', script: 'sources.js' },
+  { name: 'Källor', script: 'sources.js' },
   { name: 'Slutsats', script: 'conclusion.js' },
 
 ]);

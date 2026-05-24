@@ -1,6 +1,6 @@
 addMdToPage(`
-# 🇸🇪 Vad påverkar röstning i Sverige?
-### En berättelse om valet 2018–2022
+# Vilka faktorer påverkar röstningen i Sverige?
+### En statistisk analys av valet 2018–2022
 Riksdagsvalet 2022 markerade en tydlig förändring i svensk politik. Samtidigt som vissa partier tappade stöd, stärkte andra sina positioner, vilket tyder på att väljarnas beteende har förändrats.
 Detta väcker en central fråga:
 Vad är det egentligen som påverkar hur människor röstar?
