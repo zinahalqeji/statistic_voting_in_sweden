@@ -1,8 +1,18 @@
 [
-    {
+  {
     "name": "counties-sqlite",
     "type": "sqlite",
     "file": "counties.sqlite3"
+  },
+  {
+    "name": "undersokning_2018",
+    "type": "sqlite",
+    "file": "undersokning_2018.db"
+  },
+  {
+    "name": "undersokning_2022",
+    "type": "sqlite",
+    "file": "undersokning_2022.db"
   },
   {
     "name": "geo-mysql",
