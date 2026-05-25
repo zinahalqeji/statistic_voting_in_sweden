@@ -1,5 +1,7 @@
 import { lanKommun, electionResults } from "../helper/dataLoader.js";
 import dbInfoOk, { displayDbNotOkText } from "../helper/dbInfoOk.js";
+import { mean, standardDeviation } from "../helper/statistics.js";
+import { partyColors } from "../helper/partyConfig.js";
 
 if (!dbInfoOk) {
 
@@ -9,7 +11,7 @@ if (!dbInfoOk) {
 
   // Intro
 
-addMdToPage(`
+  addMdToPage(`
 # Vinnare & förlorare (2018–2022)
 
 <div style="
@@ -33,14 +35,13 @@ Genom att analysera utvecklingen på nationell nivå och bryta ned resultaten pe
 
 Analysen är en central del av projektets huvudfråga:  
 **Vad påverkar röstning i Sverige?**  
+
 Genom att först kartlägga *vilka partier som vann och förlorade* kan vi senare koppla dessa förändringar till socioekonomiska och geografiska faktorer.
 
 </div>
 `);
 
-
-
-  // Fixa kommun name issue in lanKommun data
+  // Fix municipality names
 
   lanKommun.forEach(row => {
 
@@ -50,46 +51,43 @@ Genom att först kartlägga *vilka partier som vann och förlorade* kan vi senar
 
   });
 
-  // KOMMUN → LÄN
+  // Kommun → Län mapping
 
   const kommunToLan = new Map();
 
   lanKommun.forEach(row => {
-    kommunToLan.set(row.kommun, row.lan);
+
+    kommunToLan.set(
+      row.kommun,
+      row.lan
+    );
+
   });
 
-  // Parti färger
- 
-  const partyColors = {
-    'Socialdemokraterna': '#EE2020',
-    'Arbetarepartiet-Socialdemokraterna': '#EE2020',
-    'Moderaterna': '#1D74BB',
-    'Sverigedemokraterna': '#DDDD00',
-    'Centerpartiet': '#009933',
-    'Vänsterpartiet': '#AF0000',
-    'Kristdemokraterna': '#003F7D',
-    'Liberalerna': '#6AB2E7',
-    'Miljöpartiet': '#83CF39'
-  };
-
-  // Total röster per val
+  // Total votes
 
   const totalVotes2018 =
-    electionResults.reduce((sum, r) =>
-      sum + Number(r.roster2018 || 0), 0);
+    electionResults.reduce(
+      (sum, row) =>
+        sum + Number(row.roster2018 || 0),
+      0
+    );
 
   const totalVotes2022 =
-    electionResults.reduce((sum, r) =>
-      sum + Number(r.roster2022 || 0), 0);
+    electionResults.reduce(
+      (sum, row) =>
+        sum + Number(row.roster2022 || 0),
+      0
+    );
 
-  
-  // Aggregera röster per parti
+  // Aggregate votes per party
 
   const partyStats = new Map();
 
   electionResults.forEach(row => {
 
-    const parti = row.parti.trim();
+    const parti =
+      row.parti.trim();
 
     if (!partyStats.has(parti)) {
 
@@ -100,17 +98,23 @@ Genom att först kartlägga *vilka partier som vann och förlorade* kan vi senar
 
     }
 
-    const stats = partyStats.get(parti);
+    const stats =
+      partyStats.get(parti);
 
-    stats.votes2018 += Number(row.roster2018 || 0);
-    stats.votes2022 += Number(row.roster2022 || 0);
+    stats.votes2018 +=
+      Number(row.roster2018 || 0);
+
+    stats.votes2022 +=
+      Number(row.roster2022 || 0);
 
   });
 
-  // Beräkna röstandelsförändring per parti
+  // Calculate changes
 
   const changes =
-    Array.from(partyStats.entries()).map(([parti, stats]) => {
+    Array.from(
+      partyStats.entries()
+    ).map(([parti, stats]) => {
 
       const percent2018 =
         (stats.votes2018 / totalVotes2018) * 100;
@@ -120,36 +124,15 @@ Genom att först kartlägga *vilka partier som vann och förlorade* kan vi senar
 
       return {
         parti,
-
         percent2018,
         percent2022,
-
         change:
           percent2022 - percent2018
       };
 
     });
 
-  // Statistiska funktioner
-  
-  function mean(arr) {
-
-    return arr.reduce((a, b) => a + b, 0) / arr.length;
-
-  }
-
-  function standardDeviation(arr) {
-
-    const avg = mean(arr);
-
-    const variance =
-      mean(arr.map(v => (v - avg) ** 2));
-
-    return Math.sqrt(variance);
-
-  }
-
-  // Nationell ranking
+  // National ranking
 
   addMdToPage(`
 ## Nationell ranking
@@ -157,75 +140,77 @@ Genom att först kartlägga *vilka partier som vann och förlorade* kan vi senar
 
   const sortedRanking =
     [...changes]
-      .sort((a, b) => b.change - a.change);
+      .sort((a, b) =>
+        b.change - a.change
+      );
 
   const rankingText =
-    sortedRanking.map((row, i) => {
+    sortedRanking
+      .map((row, i) => {
 
-      const arrow =
-        row.change > 0
-          ? "⬆️"
-          : row.change < 0
-            ? "⬇️"
-            : "⏺";
+        const arrow =
+          row.change > 0
+            ? "⬆️"
+            : row.change < 0
+              ? "⬇️"
+              : "⏺";
 
-      return `
-**${i + 1}. ${row.parti}**
+        return `
+**${i + 1}. ${row.parti}**  
 ${arrow} ${row.change.toFixed(2)} procentenheter
 `;
 
-    }).join("  \n");
+      })
+      .join("  \n");
 
   addMdToPage(rankingText);
 
-  // Nationell förändring per parti (stapeldiagram)
+  // National chart
 
   const nationalChartData = [
-    ['Parti', 'Förändring', { role: 'style' }]
+    ["Parti", "Förändring", { role: "style" }]
   ];
 
   changes.forEach(row => {
 
-    const color =
-      partyColors[row.parti] || "#888888";
-
     nationalChartData.push([
       row.parti,
       row.change,
-      `color:${color}`
+      `color:${partyColors[row.parti] || "#888888"}`
     ]);
 
   });
 
   drawGoogleChart({
 
-    type: 'ColumnChart',
+    type: "ColumnChart",
 
     data: nationalChartData,
 
     options: {
 
       title:
-        'Nationell förändring i röstandel per parti (2018–2022)',
+        "Nationell förändring i röstandel per parti (2018–2022)",
 
       height: 500,
       width: 1200,
 
-      legend: 'none',
+      legend: "none",
 
       hAxis: {
-        title: 'Parti'
+        title: "Parti"
       },
 
       vAxis: {
-        title: 'Förändring i procentenheter'
+        title:
+          "Förändring i procentenheter"
       }
 
     }
 
   });
 
-  // Statiska spridningen mellan partierna
+  // Statistical spread
 
   const allPartyChanges =
     changes.map(r => r.change);
@@ -243,27 +228,35 @@ ${arrow} ${row.change.toFixed(2)} procentenheter
     Math.min(...allPartyChanges);
 
   addMdToPage(`
-
 ## Statistisk spridning mellan partier
 
+- **Genomsnittlig förändring:** ${meanChange.toFixed(2)} procentenheter
 - **Standardavvikelse:** ${stdChange.toFixed(2)}
 - **Största ökning:** ${maxChange.toFixed(2)} procentenheter
 - **Största minskning:** ${minChange.toFixed(2)} procentenheter
 
 ### Tolkning
 
-Resultaten visar att förändringarna mellan partierna var måttliga. Standardavvikelsen på 1.53 procentenheter innebär att partiernas utveckling skilde sig åt, men utan extrema rörelser. Den största ökningen var +3.00 procentenheter och den största minskningen –1.89 procentenheter, vilket tyder på att vissa partier stärkte sitt stöd medan andra tappade något, men inga partier upplevde dramatiska förändringar. Sammantaget pekar detta på ett relativt stabilt väljarbeteende mellan valen 2018 och 2022.
+Resultaten visar att förändringarna mellan partierna var måttliga.  
+Standardavvikelsen visar hur mycket partiernas utveckling varierade mellan valen.
+
+Ett högre värde innebär större skillnader mellan partiernas förändringar, medan ett lägre värde tyder på ett mer stabilt väljarbeteende.
+
+Standardavvikelsen på 1.53 procentenheter indikerar att förändringarna mellan partierna generellt var relativt begränsade.
 `);
 
-  // Geografisk analys per län
+  // County analysis
 
   function getLanData(parti) {
 
-    const lanStats = new Map();
+    const lanStats =
+      new Map();
 
     electionResults.forEach(row => {
 
-      if (row.parti.trim() !== parti) return;
+      if (
+        row.parti.trim() !== parti
+      ) return;
 
       const lan =
         kommunToLan.get(row.kommun)
@@ -280,15 +273,19 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 
       }
 
-      const stats = lanStats.get(lan);
+      const stats =
+        lanStats.get(lan);
 
-      stats.votes2018 += Number(row.roster2018 || 0);
-      stats.votes2022 += Number(row.roster2022 || 0);
+      stats.votes2018 +=
+        Number(row.roster2018 || 0);
+
+      stats.votes2022 +=
+        Number(row.roster2022 || 0);
 
     });
 
-    // Total röster per län
-  
+    // Total votes per county
+
     electionResults.forEach(row => {
 
       const lan =
@@ -297,15 +294,20 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 
       if (!lanStats.has(lan)) return;
 
-      const stats = lanStats.get(lan);
+      const stats =
+        lanStats.get(lan);
 
-      stats.total2018 += Number(row.roster2018 || 0);
-      stats.total2022 += Number(row.roster2022 || 0);
+      stats.total2018 +=
+        Number(row.roster2018 || 0);
+
+      stats.total2022 +=
+        Number(row.roster2022 || 0);
 
     });
 
-
-    return Array.from(lanStats.entries()).map(([lan, stats]) => {
+    return Array.from(
+      lanStats.entries()
+    ).map(([lan, stats]) => {
 
       const percent2018 =
         (stats.votes2018 / stats.total2018) * 100;
@@ -313,41 +315,45 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
       const percent2022 =
         (stats.votes2022 / stats.total2022) * 100;
 
-      return [
+      return {
         lan,
-        percent2022 - percent2018
-      ];
+        change:
+          percent2022 - percent2018
+      };
 
     });
 
   }
 
-  // Topp 3 och botten 3 län per parti
+  // Top & bottom counties
 
   function getTopAndBottomLan(parti) {
 
     const lanData =
       getLanData(parti);
 
-    const strongest =
-      [...lanData]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3);
-
-    const weakest =
-      [...lanData]
-        .sort((a, b) => a[1] - b[1])
-        .slice(0, 3);
-
     return {
-      strongest,
-      weakest
+
+      strongest:
+        [...lanData]
+          .sort((a, b) =>
+            b.change - a.change
+          )
+          .slice(0, 3),
+
+      weakest:
+        [...lanData]
+          .sort((a, b) =>
+            a.change - b.change
+          )
+          .slice(0, 3)
+
     };
 
   }
 
-  // Pie chart per län för valt parti
- 
+  // Pie chart
+
   function drawLanPieChart(parti) {
 
     const lanData =
@@ -357,22 +363,22 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
       ["Län", "Förändring"]
     ];
 
-    lanData.forEach(([lan, diff]) => {
+    lanData.forEach(row => {
 
       data.push([
-        lan,
-        Math.abs(diff)
+        row.lan,
+        Math.abs(row.change)
       ]);
 
     });
 
     const slices = {};
 
-    lanData.forEach(([lan, diff], index) => {
+    lanData.forEach((row, index) => {
 
       slices[index] = {
         color:
-          diff >= 0
+          row.change >= 0
             ? "#2ECC71"
             : "#E74C3C"
       };
@@ -412,8 +418,6 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 
     });
 
-    // Förklarande text under diagrammet
-  
     addMdToPage(`
 <div style="display:flex; gap:20px; margin-top:10px;">
 
@@ -430,8 +434,6 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
 </div>
 `);
 
-    // Topp 3 och botten 3 län per parti
-
     const {
       strongest,
       weakest
@@ -440,20 +442,20 @@ Resultaten visar att förändringarna mellan partierna var måttliga. Standardav
     let md =
       `### Topp 3 starkaste län för ${parti}\n`;
 
-    strongest.forEach(([lan, diff], i) => {
+    strongest.forEach((row, i) => {
 
       md +=
-        `${i + 1}. **${lan}** — +${diff.toFixed(2)} procentenheter\n`;
+        `${i + 1}. **${row.lan}** — +${row.change.toFixed(2)} procentenheter\n`;
 
     });
 
     md +=
       `\n### Topp 3 svagaste län för ${parti}\n`;
 
-    weakest.forEach(([lan, diff], i) => {
+    weakest.forEach((row, i) => {
 
       md +=
-        `${i + 1}. **${lan}** — ${diff.toFixed(2)} procentenheter\n`;
+        `${i + 1}. **${row.lan}** — ${row.change.toFixed(2)} procentenheter\n`;
 
     });
 
@@ -465,16 +467,14 @@ Förändringarna visar hur ${parti} utvecklades geografiskt mellan valen 2018 oc
 - Positiva värden visar län där partiet ökade sin röstandel.
 - Negativa värden visar län där partiet tappade röstandel.
 
-Analysen använder röstandelar istället för absoluta rösttal. Det innebär att resultaten är normaliserade efter storleken på väljarkåren i varje län, vilket gör jämförelser mellan olika län mer statistiskt rättvisa.
-
-Eftersom analysen bygger på hela populationen av registrerade röster beskriver resultaten faktiska förändringar i valutfallet och inte statistiska uppskattningar från ett stickprov.
+Analysen använder röstandelar istället för absoluta rösttal, vilket gör jämförelser mellan län mer statistiskt rättvisa.
 `;
 
     addMdToPage(md);
 
   }
 
-  // Dropdown för att välja parti och visa geografisk analys per län
+  // Dropdown
 
   addMdToPage(`
 ## Geografisk analys per län
@@ -492,35 +492,46 @@ Eftersom analysen bygger på hela populationen av registrerade röster beskriver
   const partiSelect =
     selects[selects.length - 1];
 
-  partiSelect.addEventListener("change", () => {
+  partiSelect.addEventListener(
+    "change",
+    () => {
 
-    drawLanPieChart(partiSelect.value);
+      drawLanPieChart(
+        partiSelect.value
+      );
 
-  });
+    }
+  );
 
-  drawLanPieChart(partiSelect.value);
+  drawLanPieChart(
+    partiSelect.value
+  );
 
-
-  // Slutsats
+  // Winners & losers
 
   const winners =
     [...changes]
-      .sort((a, b) => b.change - a.change)
+      .sort((a, b) =>
+        b.change - a.change
+      )
       .slice(0, 3);
 
   const losers =
     [...changes]
-      .sort((a, b) => a.change - b.change)
+      .sort((a, b) =>
+        a.change - b.change
+      )
       .slice(0, 3);
 
   addMdToPage(`
-
 ### Största vinnare
+
 ${winners.map((p, i) =>
   `${i + 1}. **${p.parti}** — +${p.change.toFixed(2)} procentenheter`
 ).join("  \n")}
 
 ### Största förlorare
+
 ${losers.map((p, i) =>
   `${i + 1}. **${p.parti}** — ${p.change.toFixed(2)} procentenheter`
 ).join("  \n")}
@@ -537,12 +548,13 @@ border-left:8px solid #192c4e;
 
 Analysen visar att vissa partier stärkte sitt nationella väljarstöd samtidigt som andra tappade stöd mellan valen.
 
-Den statistiska spridningen visar dessutom att förändringarna inte var jämnt fördelade mellan partierna. Vissa partier uppvisade mycket större förändringar än genomsnittet, vilket tyder på tydliga omfördelningar i väljarnas partipreferenser.
+Den statistiska spridningen visar dessutom att förändringarna inte var jämnt fördelade mellan partierna. Vissa partier uppvisade större förändringar än genomsnittet, vilket tyder på omfördelningar i väljarnas partipreferenser.
 
 Den geografiska analysen visar samtidigt att utvecklingen varierade mellan olika län. Ett parti kunde öka kraftigt i vissa delar av landet men samtidigt minska i andra, vilket tyder på regionala skillnader i väljarnas beteende och politiska utveckling.
 
 Eftersom analysen bygger på hela populationen av registrerade röster beskriver resultaten faktiska förändringar i valresultaten och inte statistiska uppskattningar från ett stickprov.
+
 </div>
 `);
-  
+
 }
