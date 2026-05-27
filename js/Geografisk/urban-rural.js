@@ -103,9 +103,7 @@ function statCards(cards) {
     html += '<div style="background:white; padding:20px; border-radius:8px; min-height:118px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">';
     html += '<h3 style="margin:0 0 10px 0; font-size:19px;">' + card.title + '</h3>';
     html += '<p style="font-size:23px; font-weight:bold; margin:0 0 6px 0;">' + card.value + '</p>';
-    if (card.note) {
-      html += '<p style="font-size:14px; margin:0; color:#555;">' + card.note + '</p>';
-    }
+    if (card.note) html += '<p style="font-size:14px; margin:0; color:#555;">' + card.note + '</p>';
     html += '</div>';
   });
   html += '</div>';
@@ -192,7 +190,7 @@ Här jämför vi Sveriges tre största storstadslän med mindre tätbefolkade l�
 - Antal röster anges i **antal röster** – det faktiska antalet röster partiet fick i gruppen.
 
 **Indelning:**
-- **Storstadslän** = Stockholms, Skåne och Västra Götalands län.
+- **Storstadslän** = Stockholms, Skåne och Västra Götalands län (3 län).
 - **Mindre tätbefolkade län** = övriga 18 län.
 `);
 
@@ -206,8 +204,7 @@ addToPage(loadingBox());
 if (!dbInfoOk) {
   removeLoadingBox();
   displayDbNotOkText();
-}
-else {
+} else {
   dbQuery.use("undersokning_2018");
   const data2018 = await dbQuery("SELECT * FROM roster_2018");
 
@@ -236,26 +233,10 @@ else {
   addMdToPage("## Sammanfattning av urvalet");
 
   addToPage(statCards([
-    {
-      title: "Valt parti",
-      value: chosenParty,
-      note: chosenPartyName
-    },
-    {
-      title: "Storstadslän 2022",
-      value: formatPercent(city2022.share),
-      note: "Förändring: " + formatPE(cityChange)
-    },
-    {
-      title: "Landsbygdslän 2022",
-      value: formatPercent(lessDense2022.share),
-      note: "Förändring: " + formatPE(lessDenseChange)
-    },
-    {
-      title: "Starkast i",
-      value: strongerIn,
-      note: "Gap: " + formatPercent(Math.abs(gap2022val))
-    }
+    { title: "Valt parti", value: chosenParty, note: chosenPartyName },
+    { title: "Storstadslän 2022", value: formatPercent(city2022.share), note: "Förändring: " + formatPE(cityChange) },
+    { title: "Landsbygdslän 2022", value: formatPercent(lessDense2022.share), note: "Förändring: " + formatPE(lessDenseChange) },
+    { title: "Starkast i", value: strongerIn, note: "Gap: " + formatPercent(Math.abs(gap2022val)) }
   ]));
 
   addMdToPage(`
@@ -269,7 +250,7 @@ Diagrammet visar röstandel (%) för **${chosenPartyName}** i storstadslän och 
   drawGoogleChart({
     type: "ColumnChart",
     data: [
-      ["Områdestyp", "2018 (%)", "2022 (%)"],
+      ["Läntyp", "2018 (%)", "2022 (%)"],
       ["Storstadslän", city2018.share, city2022.share],
       ["Mindre tätbefolkade län", lessDense2018.share, lessDense2022.share]
     ],
@@ -278,7 +259,7 @@ Diagrammet visar röstandel (%) för **${chosenPartyName}** i storstadslän och 
       height: 520,
       chartArea: { width: "75%", height: "70%" },
       vAxis: { title: "Röstandel (%)", viewWindow: { min: 0 } },
-      hAxis: { title: "Områdestyp" },
+      hAxis: { title: "Läntyp" },
       colors: [BAR_COLOR_2018, BAR_COLOR_2022]
     }
   });
@@ -292,7 +273,7 @@ Diagrammet visar hur mycket röstandelen förändrades mellan 2018 och 2022 i va
   drawGoogleChart({
     type: "ColumnChart",
     data: [
-      ["Områdestyp", "Förändring (pe)", { role: "style" }],
+      ["Läntyp", "Förändring (pe)", { role: "style" }],
       ["Storstadslän", cityChange, "color: #2f5d50"],
       ["Mindre tätbefolkade län", lessDenseChange, "color: #82b5a8"]
     ],
@@ -301,7 +282,7 @@ Diagrammet visar hur mycket röstandelen förändrades mellan 2018 och 2022 i va
       height: 400,
       chartArea: { width: "75%", height: "65%" },
       vAxis: { title: "Förändring (procentenheter)" },
-      hAxis: { title: "Områdestyp" },
+      hAxis: { title: "Läntyp" },
       legend: "none"
     }
   });
@@ -309,13 +290,13 @@ Diagrammet visar hur mycket röstandelen förändrades mellan 2018 och 2022 i va
   addMdToPage(`
 ## Tabell: röstandel och röster
 
-Tabellen visar röstandel och antal röster för båda grupperna i båda valen. Förändringen anges i **procentenheter (pe)**. Positivt värde = partiet ökade, negativt = partiet minskade.
+Tabellen visar röstandel och antal röster för båda längrupperna i båda valen. Förändringen anges i **procentenheter (pe)**. Positivt värde = partiet ökade, negativt = partiet minskade.
 `);
 
   tableFromData({
     data: [
       {
-        "Områdestyp": "Storstadslän",
+        "Läntyp": "Storstadslän",
         "Ingående län": "Stockholm, Skåne, V.Götaland",
         "Antal län": city2018.areas,
         "Röstandel 2018 (%)": formatPercent(city2018.share),
@@ -325,7 +306,7 @@ Tabellen visar röstandel och antal röster för båda grupperna i båda valen. 
         "Förändring (pe)": formatPE(cityChange)
       },
       {
-        "Områdestyp": "Mindre tätbefolkade län",
+        "Läntyp": "Mindre tätbefolkade län",
         "Ingående län": "Övriga 18 län",
         "Antal län": lessDense2018.areas,
         "Röstandel 2018 (%)": formatPercent(lessDense2018.share),
@@ -347,12 +328,16 @@ Tabellen visar röstandel och antal röster för båda grupperna i båda valen. 
 
 Analysen bygger på valresultat från tabellerna **roster_2018** och **roster_2022**.
 
-**Hur indelningen görs:** Storstadslän = Stockholms, Skåne och Västra Götalands län. Övriga 18 län räknas som mindre tätbefolkade.
+**Hur indelningen görs:** Storstadslän = Stockholms, Skåne och Västra Götalands län (3 av Sveriges 21 län). Övriga 18 län räknas som mindre tätbefolkade.
 
-**Hur röstandel räknas ut:** Partiets sammanlagda röster i gruppen divideras med summan av röster för S, M, SD, V, C, KD, L och MP i samma grupp.
+**Hur röstandel räknas ut:** Partiets sammanlagda röster i längruppen divideras med summan av röster för S, M, SD, V, C, KD, L och MP i samma grupp.
 
 **Hur förändring räknas ut:** Förändring i pe = röstandel 2022 minus röstandel 2018.
 
 **Begränsningar:** Indelningen stad/landsbygd är förenklad. Skåne och Västra Götaland innehåller både stora städer och landsbygd. Stockholms län dominerar storstadsgruppen eftersom det är landets folkrikaste län.
+
+**Källor:**
+- Valresultat per valkrets: Valmyndigheten (undersokning_2018.db och undersokning_2022.db)
+- Sveriges 21 län och länindelning: SCB – Statistiska centralbyrån. [www.scb.se/hitta-statistik/regional-statistik-och-kartor/regionala-indelningar/lan-och-kommuner/](https://www.scb.se/hitta-statistik/regional-statistik-och-kartor/regionala-indelningar/lan-och-kommuner/)
 `);
 }

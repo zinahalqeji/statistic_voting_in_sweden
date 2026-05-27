@@ -18,7 +18,6 @@ statistiska analyser av valresultat, socioekonomiska faktorer och regionala skil
 
 </div>
 
-
 ---
 
 # Primära datakällor
@@ -38,7 +37,13 @@ https://resultat.val.se/val2022/RD?r=S
 - Blockanalys (vänster/höger)  
 - Vinnare & förlorare  
 - Regionala politiska skiften  
+- Används i sidorna: Regioner (Norr/Söder), Stad vs Landsbygd, Populäraste parti
 
+**Trovärdighet:**  
+Valmyndigheten är den statliga myndighet som ansvarar för genomförande och redovisning av svenska val. Datan är officiell och används som primärkälla av alla svenska medier och myndigheter. Trovärdigheten bedöms som mycket hög.
+
+**Datakvalitet:**  
+Datan täcker samtliga 290 kommuner och alla riksdagspartier för valen 2018 och 2022. Valresultaten är slutgiltiga och revideras inte i efterhand. Datakvaliteten bedöms som mycket hög.
 
 ---
 
@@ -53,6 +58,11 @@ https://www.scb.se/hitta-statistik/sverige-i-siffror/utbildning-jobb-och-pengar/
 - Korrelation mellan utbildningsnivå och politiska skiften  
 - Regionala drivkrafter  
 
+**Trovärdighet:**  
+SCB är Sveriges officiella statistikmyndighet och ansvarar för nationell statistik enligt lag. Datan är tillförlitlig och används av myndigheter, forskning och media. Trovärdigheten bedöms som mycket hög.
+
+**Datakvalitet:**  
+Datan baseras på registeruppgifter från Skatteverket och utbildningsregister. Täcker samtliga kommuner. Datakvaliteten bedöms som hög.
 
 ---
 
@@ -66,7 +76,13 @@ https://www.scb.se/en/finding-statistics/regional-statistics/regional-divisions/
 - Koppling mellan kommun och län  
 - Regionala analyser  
 - Länsvisa politiska skiften  
+- Används i sidorna: Regioner (Norr/Söder), Stad vs Landsbygd
 
+**Trovärdighet:**  
+SCB ansvarar officiellt för regionala indelningar i Sverige. Indelningen i 21 län och 290 kommuner är fastställd i lag och uppdateras av SCB. Trovärdigheten bedöms som mycket hög.
+
+**Datakvalitet:**  
+Indelningen är fullständig och täcker hela Sverige. Datakvaliteten bedöms som mycket hög.
 
 ---
 
@@ -82,9 +98,15 @@ https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__AM__AM0401__AM0401L/NA
 - Socioekonomiska analyser kopplade till valresultat  
 - Tidsserieanalys 2018–2022
 
+**Trovärdighet:**  
+AKU (Arbetskraftsundersökningen) är SCB:s officiella mätning av arbetsmarknaden och följer EU:s standarder. Trovärdigheten bedöms som mycket hög.
+
+**Datakvalitet:**  
+Datan baseras på urvalsundersökning vilket innebär viss osäkerhet på kommunnivå. På länsnivå är tillförlitligheten god. Datakvaliteten bedöms som god men med viss osäkerhet på kommunnivå.
+
 ---
 
-## 5. SCB - Inkomstnivå i Sverige
+## 5. SCB – Inkomstnivå i Sverige
 **Källa:** Statistiska centralbyrån  
 **Dataset:** Sammanräknad förvärvsinkomst för boende i Sverige hela året efter region, kön, ålder och inkomstklass  
 **URL:**  
@@ -105,6 +127,49 @@ https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__HE__HE0110__HE0110A/Sa
 - Korrelation mellan inkomst och politiskt stöd  
 - Tidsserieanalys 2018–2022
 
+**Trovärdighet:**  
+Inkomstdata från SCB baseras på registeruppgifter från Skatteverket och täcker hela befolkningen. Trovärdigheten bedöms som mycket hög.
+
+**Datakvalitet:**  
+Datan täcker samtliga kommuner och är baserad på faktiska inkomstdeklarationer. Datakvaliteten bedöms som mycket hög.
+
+---
+
+## 6. SCB – Befolkningstäthet per kommun 2018 & 2022
+**Källa:** Statistiska centralbyrån  
+**Dataset:** Invånare per kvadratkilometer (landareal) efter region och år  
+**URL:**  
+https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__BE__BE0101__BE0101C/BefArealTathetKon/
+
+**Användning i projektet:**  
+- Befolkningstäthet (invånare/km²) per kommun för 2018 och 2022  
+- Används i sidan: Befolkningstäthet och röstning
+
+**Trovärdighet:**  
+SCB är Sveriges officiella statistikmyndighet. Befolkningstätheten beräknas utifrån folkbokförd befolkning och officiell landareal. Trovärdigheten bedöms som mycket hög.
+
+**Datakvalitet:**  
+Datan täcker samtliga 290 kommuner för båda åren. Värdena baseras på landareal exklusive vatten. Datakvaliteten bedöms som hög. Notera att tätheten anges per landareal vilket kan ge lägre värden än om vattenområden inkluderas.
+
+---
+
+## 7. SCB – Utrikes födda per kommun 2018 & 2022
+**Källa:** Statistiska centralbyrån  
+**Dataset:** Befolkning efter region, födelseregion och år  
+**URL:**  
+https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__BE__BE0101__BE0101Q/UtrikesFoddaR/
+
+**Användning i projektet:**  
+- Antal utrikes födda per kommun 2018 och 2022  
+- Beräkning av andel utrikes födda (%) som andel av kommunens befolkning  
+- Används i sidan: Invandring och röstning
+
+**Trovärdighet:**  
+SCB:s data om utrikes födda baseras på folkbokföringsregistret från Skatteverket och täcker hela befolkningen. Trovärdigheten bedöms som mycket hög.
+
+**Datakvalitet:**  
+Datan täcker samtliga kommuner. En viktig begränsning är att andelen utrikes födda inkluderar personer utan rösträtt i riksdagsval – endast svenska medborgare har rösträtt. Variabeln mäter därför inte exakt den röstberättigade befolkningens sammansättning, men är det bästa tillgängliga måttet på kommunal nivå. Datakvaliteten bedöms som hög med denna begränsning i åtanke.
+
 ---
 
 # Databearbetning
@@ -120,7 +185,6 @@ För att möjliggöra jämförbara analyser har följande steg genomförts:
 - Normalisering av socioekonomiska variabler  
 - Korrelationer mellan socioekonomi och politiska skiften  
 
-
 ---
 
 # Statistiska metoder
@@ -130,10 +194,11 @@ Projektet använder följande metoder:
 - Deskriptiv statistik (medel, median, standardavvikelse)  
 - Förändringsanalys (2018–2022)  
 - Korrelation (Pearson r)  
+- Linjär regression (minsta kvadratmetoden) för trendlinjer  
+- Percentilindelning för gruppanalys  
 - Rangordning (Top 10 / Bottom 10)  
-- Visualiseringar: stapeldiagram, linjediagram, bubbeldiagram  
+- Visualiseringar: stapeldiagram, linjediagram, scatterplot med trendlinje  
 - Regional analys på läns- och kommunnivå  
-
 
 ---
 
@@ -142,6 +207,8 @@ Projektet använder följande metoder:
 - Valmyndigheten – Officiella valresultat  
 - Statistiska centralbyrån (SCB) – Inkomst, utbildning, befolkning, tätorter  
 - SCB – Kommuner och län (LAU2)  
+- SCB – Befolkningstäthet per kommun  
+- SCB – Utrikes födda per kommun  
 - Sveriges kommuner och regioner (SKR) – Kommunindelning  
 
 ---

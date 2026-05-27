@@ -35,6 +35,13 @@ const NORTH_COUNTIES = [
   "Gävleborgs län"
 ];
 
+// Sverige har 21 län totalt.
+// Norra Sverige = 5 nordligaste länen.
+// Södra Sverige = övriga 16 län.
+const TOTAL_COUNTIES = 21;
+const NORTH_COUNT = NORTH_COUNTIES.length;
+const SOUTH_COUNT = TOTAL_COUNTIES - NORTH_COUNT;
+
 function toNumber(value) {
   const num = Number(String(value || 0).replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(num) ? num : 0;
@@ -231,8 +238,8 @@ if (!dbInfoOk) {
 
     addToPage(statCards([
       { title: "Valt parti", value: chosenParty, note: chosenPartyName },
-      { title: "Norra Sverige 2022", value: formatPercent(north2022.share), note: north2022.areas + " län ingår" },
-      { title: "Södra Sverige 2022", value: formatPercent(south2022.share), note: south2022.areas + " län ingår" },
+      { title: "Norra Sverige 2022", value: formatPercent(north2022.share), note: NORTH_COUNT + " län ingår" },
+      { title: "Södra Sverige 2022", value: formatPercent(south2022.share), note: SOUTH_COUNT + " län ingår" },
       { title: "Starkast region 2022", value: strongerRegion, note: "Skillnad: " + formatPercent(absDiff) }
     ]));
 
@@ -241,7 +248,7 @@ if (!dbInfoOk) {
 
 Diagrammet visar röstandel (%) för **${chosenPartyName}** i norra och södra Sverige år 2018 och 2022. **Mörkröd stapel = 2018, ljusröd stapel = 2022.**
 
-Norra Sverige = ${NORTH_COUNTIES.length} nordligaste länen. Södra Sverige = övriga ${south2022.areas} områden.
+Sverige har **21 län** totalt. Norra Sverige = **${NORTH_COUNT} nordligaste länen** (Norrbotten, Västerbotten, Västernorrland, Jämtland och Gävleborg). Södra Sverige = övriga **${SOUTH_COUNT} län**.
 `);
 
     addToPage(partyBadge(chosenParty, chosenPartyName));
@@ -296,7 +303,7 @@ Förändringen anges i **procentenheter (pe)**.
       data: [
         {
           "Region": "Norra Sverige",
-          "Antal områden": north2018.areas,
+          "Antal län": NORTH_COUNT,
           "Röstandel 2018 (%)": formatPercent(north2018.share),
           "Röster 2018": formatVotes(north2018.partyVotes),
           "Röstandel 2022 (%)": formatPercent(north2022.share),
@@ -305,7 +312,7 @@ Förändringen anges i **procentenheter (pe)**.
         },
         {
           "Region": "Södra Sverige",
-          "Antal områden": south2018.areas,
+          "Antal län": SOUTH_COUNT,
           "Röstandel 2018 (%)": formatPercent(south2018.share),
           "Röster 2018": formatVotes(south2018.partyVotes),
           "Röstandel 2022 (%)": formatPercent(south2022.share),
@@ -323,11 +330,15 @@ Förändringen anges i **procentenheter (pe)**.
     addMdToPage(`
 ## Metod och begränsningar
 
-**Hur regionerna definieras:** Norra Sverige = Norrbottens, Västerbottens, Västernorrlands, Jämtlands och Gävleborgs län. Södra Sverige = övriga områden. Dalarna och Värmland räknas som södra Sverige trots att de är geografiskt mellansvenska.
+**Hur regionerna definieras:** Sverige har 21 län totalt. Norra Sverige = Norrbottens, Västerbottens, Västernorrlands, Jämtlands och Gävleborgs län (de 5 nordligaste länen). Södra Sverige = övriga 16 län. Dalarna och Värmland räknas som södra Sverige trots att de är geografiskt mellansvenska.
 
 **Hur röstandel räknas ut:** Partiets sammanlagda röster i regionen divideras med summan av röster för S, M, SD, V, C, KD, L och MP i samma region.
 
-**Begränsningar:** Indelningen norr/söder är grov. Stora befolkningsrika områden som Stockholm och Skåne påverkar södra Sveriges genomsnitt mer än mindre områden.
+**Begränsningar:** Indelningen norr/söder är grov. Stora befolkningsrika län som Stockholm, Västra Götaland och Skåne påverkar södra Sveriges genomsnitt mer än mindre län.
+
+**Källor:**
+- Valresultat per valkrets: Valmyndigheten (undersokning_2018.db och undersokning_2022.db)
+- Sveriges 21 län och länindelning: SCB – Statistiska centralbyrån. [www.scb.se/hitta-statistik/regional-statistik-och-kartor/regionala-indelningar/lan-och-kommuner/](https://www.scb.se/hitta-statistik/regional-statistik-och-kartor/regionala-indelningar/lan-och-kommuner/)
 `);
   }
 }
