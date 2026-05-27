@@ -602,5 +602,7 @@ Analysen använder tabellen **valdata_kommun** från databasen **counties-sqlite
 **Hur täthetsgrupperna räknas ut:** Kommunerna delas in i tre grupper baserat på befolkningstäthetens 33:e och 66:e percentil. Gränsen för låg-gruppen sätts vid det täthetsvärde som 33 % av kommunerna ligger under, och gränsen för hög-gruppen vid det värde som 66 % av kommunerna ligger under. Grupperna kan vara olika stora eftersom täthetsvärdena inte är jämnt fördelade i verkligheten – de flesta svenska kommuner är glesbefolkade medan ett fåtal storstadskommuner har extremt hög täthet.
 
 **Begränsningar:** Analysen sker på kommunnivå. Inom en kommun kan det finnas både tätorter och landsbygd, vilket gör att befolkningstätheten kan förenkla verkligheten. Kommuner med extremt hög täthet (storstäder) kan påverka korrelationen oproportionerligt mycket.
+
+**Datakvalitet – befolkningstäthet:** Befolkningstäthetsdata är hämtad från SCB (Statistiska centralbyrån) och anger invånare per km² landareal per kommun för åren 2018 och 2022. Källa: SCB Statistikdatabasen – Befolkningstäthet per kommun. [statistikdatabasen.scb.se](https://www.statistikdatabasen.scb.se/pxweb/sv/ssd/START__BE__BE0101__BE0101C/BefArealTathetKon/)
 `);
 }
